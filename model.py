@@ -1,6 +1,7 @@
 from gymnasium import spaces
 import gymnasium as gym
 import numpy as np
+import torch.nn as nn
 
 class trading_env(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -64,3 +65,18 @@ class trading_env(gym.Env):
             
     def render(self, mode = 'human', close=False):
         print(f'reward: {self.reward}')
+        
+        
+# Define the LSTM model
+class LSTMModel(nn.Module):
+    def __init__(self, input_size=1, output_size=1):
+        super(LSTMModel, self).__init__()
+        self.lstm = nn.LSTM(input_size, 32, 3, batch_first=True)
+        self.dropout = nn.Dropout(0.2)
+        self.fc = nn.Linear(32, output_size)
+
+    def forward(self, x):
+        out, _ = self.lstm(x)
+        out = self.dropout(out[:, -1, :])
+        out = self.fc(out)
+        return out

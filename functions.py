@@ -1,13 +1,15 @@
 import pandas as pd
 import yfinance as yf
-from sklearn.model_selection import train_test_split
+from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import RobustScaler
 from stockstats import StockDataFrame as Sdf
 import numpy as np
-from scipy import stats
+from scipy.stats import zscore
 import torch
+from model import LSTMModel
 import torch.nn as nn
+import matplotlib.pyplot as plt
 
 def search_null_value(df):
     columns_with_null = df.columns[df.isnull().any()]
@@ -34,7 +36,7 @@ def prepare_data_forlstm(data):
 
 def normalize_minmax_data(data):
     scaler = MinMaxScaler(feature_range=(0, 1))
-    rsi_scaled = scaler.fit_transform(data)
+    rsi_scaled = scaler.fit_transform(data.reshape(-1, 1))
     return rsi_scaled
 
 def normalize_robustscaler(data):
@@ -43,7 +45,10 @@ def normalize_robustscaler(data):
     return X_scaled
 
 def cal_zscore(list_data):
-    return len(np.where(np.abs(stats.zscore(list_data))>3))
+    z_scores = zscore(list_data)
+    outlier_indices = np.where(np.abs(z_scores) >= 3)[0]
+    filtered_data = list_data[np.abs(z_scores) < 3]
+    return filtered_data, outlier_indices
 
 def detect_outliers_iqr(data, threshold=1.5):
     q1 = np.percentile(data, 25)
@@ -79,7 +84,7 @@ def add_technical_indicator(data, tech_indicator_list):
         :return: (df) pandas dataframe
         """
         df = data.copy()
-        df = df.sort_values(by=["tic", "Date"])
+        df = df.sort_values(by=["Date"])
         stock = Sdf.retype(df.copy())
         unique_ticker = stock.tic.unique()
 
@@ -107,8 +112,55 @@ def add_technical_indicator(data, tech_indicator_list):
         df = df.sort_values(by=["Date", "tic"])
         return df
     
-def train_lstm(train_X, train_Y):
+def train_lstm(train_X, train_Y, test_X, test_Y, epochs, threshold_loss):
     train_X = torch.from_numpy(train_X).unsqueeze(2).float()
     train_Y = torch.from_numpy(train_Y).float()
     test_X = torch.from_numpy(test_X).unsqueeze(2).float()
     test_Y = torch.from_numpy(test_Y).float()
+    
+    train_dataset = TensorDataset(train_X, train_Y)
+    test_dataset = TensorDataset(test_X, test_Y)
+    train_loader = DataLoader(train_dataset, batch_size=2048, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=2048, shuffle=True)
+    
+    model = LSTMModel()
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters())
+    
+    # Train the model
+    list_loss = []
+    for epoch in range(epochs):
+        for inputs, labels in train_loader:
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels.unsqueeze(1))
+            loss.backward()
+            optimizer.step()
+            list_loss.append(loss.item())
+            if (epoch+1) % 10 == 0:
+                print(f'Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}')
+                
+            # if loss.item() < threshold_loss:
+            #     print(f'Loss is below threshold ({threshold_loss}), saving the model...')
+            #     torch.save(model.state_dict(), 'model.pth')
+            #     break
+
+    # Test the model
+    model.eval()
+    test_loss = 0
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            outputs = model(inputs)
+            loss = criterion(outputs, labels.unsqueeze(1))
+            test_loss += loss.item()
+    test_loss /= len(test_loader)
+    print(f'Test MSE: {test_loss}')
+    
+    torch.save(model.state_dict(), 'model.pth')
+    
+    plt.plot(list_loss)
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss')
+    plt.savefig('loss_plot.png')  # Save the plot as an image file
+    plt.close()
