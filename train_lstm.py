@@ -18,7 +18,7 @@ class train_lstm:
                  shuffle_train = None, 
                  shuffle_test= None,
                  splitdata_rd_stage4test = None,
-                 splitdata_test_size = 3,
+                 splitdata_test_size = 0.3,
                  splitdata_shuffle = False,
                  path_save_loss = "loss.jpg",
                  path_save_model = "model.pth"):
@@ -92,6 +92,7 @@ class train_lstm:
         test_loss = 0
         with torch.no_grad():
             for inputs, labels in test_loader:
+                print('input model',inputs)
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels.unsqueeze(1))
                 test_loss += loss.item()
@@ -104,7 +105,7 @@ class train_lstm:
         data2train_rsi = self.prepare_data(list_indicator)
         # convert data to array
         close_value = np.array(data2train_rsi['Close'])
-        rsi_value = np.array(self.data[indicator_name])
+        rsi_value = np.array(data2train_rsi[indicator_name])
         # filter outlier with z-score
         data, outlier = self.pre_data.cal_zscore(close_value)
         label_filtered = np.delete(rsi_value, outlier)
@@ -112,11 +113,15 @@ class train_lstm:
         norm_data = self.normalize.normalize_minmax_1d_data(data)
         norm_label = self.normalize.normalize_minmax_1d_data(label_filtered)
         # split data to train and test
+        
+        print('percent of test:',self.splitdata_test_size)
         x_train, x_test, y_train, y_test = train_test_split(norm_data, 
                                                             norm_label, 
                                                             random_state = self.splitdata_rd_stage4test, 
                                                             test_size = self.splitdata_test_size,
                                                             shuffle = self.splitdata_shuffle)
+        print('len train:',len(x_train))
+        print('len test:',len(x_test))
         self.train(x_train, y_train)
         self.eval(x_test, y_test)
         self.plot_image(self.path_save_loss)

@@ -49,7 +49,7 @@ class prepare_data:
     def add_technical_indicator(self, dataframe, tech_indicator_list):
         self.logging.info(f"add technical indicator into dataframe process, tech_indicator_list:{tech_indicator_list}")
         df = dataframe.copy()
-        df = df.sort_values(by=["Date"])
+        df = df.sort_values(by=["Date","tic"])
         stock = Sdf.retype(df.copy())
         unique_ticker = stock.tic.unique()
 
