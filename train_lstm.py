@@ -23,6 +23,8 @@ class train_lstm:
                  path_save_loss = "loss.jpg",
                  path_save_model = "model.pth"):
         
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print('device:',self.device)
         self.data = data
         self.epochs = epochs
         self.threshold_loss = threshold_loss
@@ -35,7 +37,7 @@ class train_lstm:
         self.splitdata_test_size = splitdata_test_size
         self.splitdata_shuffle = splitdata_shuffle
         self.debug_loss = debug_loss
-        self.model = LSTMModel()
+        self.model = LSTMModel().to(self.device)
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters())
         self.list_loss = []
@@ -56,8 +58,8 @@ class train_lstm:
         return data_preparing
     
     def train(self, train_X, train_Y):
-        train_X = torch.from_numpy(train_X).unsqueeze(2).float()
-        train_Y = torch.from_numpy(train_Y).float()
+        train_X = torch.from_numpy(train_X).unsqueeze(2).float().to(self.device)
+        train_Y = torch.from_numpy(train_Y).float().to(self.device)
         
         train_dataset = TensorDataset(train_X, train_Y)
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=self.shuffle_train)
@@ -92,7 +94,7 @@ class train_lstm:
         test_loss = 0
         with torch.no_grad():
             for inputs, labels in test_loader:
-                print('input model',inputs)
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels.unsqueeze(1))
                 test_loss += loss.item()

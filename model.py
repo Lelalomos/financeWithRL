@@ -71,12 +71,20 @@ class trading_env(gym.Env):
 class LSTMModel(nn.Module):
     def __init__(self, input_size=1, output_size=1):
         super(LSTMModel, self).__init__()
-        self.lstm = nn.LSTM(input_size, 32, 3, batch_first=True)
-        self.dropout = nn.Dropout(0.2)
+        self.lstm1 = nn.LSTM(input_size, 32, 3, batch_first=True)
+        self.dropout = nn.Dropout(0.1)
+        self.lstm21 = nn.LSTM(32, 64, 3, batch_first=True)
+        self.lstm22 = nn.LSTM(64, 64, 3, batch_first=True)
+        self.dropout = nn.Dropout(0.1)
+        self.lstm3 = nn.LSTM(64, 32, 3, batch_first=True)
         self.fc = nn.Linear(32, output_size)
 
     def forward(self, x):
-        out, _ = self.lstm(x)
-        out = self.dropout(out[:, -1, :])
-        out = self.fc(out)
-        return out
+        out, _ = self.lstm1(x)
+        out = self.dropout(out)
+        lstm_out21, _ = self.lstm21(out)
+        lstm_out22, _ = self.lstm22(lstm_out21)
+        out1 = self.dropout(lstm_out22)
+        lstm_out3, _ = self.lstm3(out1)
+        fc_out = self.fc(lstm_out3)
+        return fc_out
