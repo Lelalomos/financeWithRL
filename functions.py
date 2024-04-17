@@ -4,6 +4,8 @@ import torch
 from model import LSTMModel
 import torch.nn as nn
 import matplotlib.pyplot as plt
+import os
+import pandas as pd
 
 def search_null_value(df):
     columns_with_null = df.columns[df.isnull().any()]
@@ -24,3 +26,17 @@ def detect_outliers_iqr(data, threshold=1.5):
     lower_bound = q1 - (threshold * iqr)
     upper_bound = q3 + (threshold * iqr)
     return len(np.where((data < lower_bound) | (data > upper_bound))[0])
+
+
+def predict_rsi(data, model_path):
+    if pd.isna(data['rsi_14']) or data['rsi_14'] in [None,np.nan,""]:
+        close = float(data['Close'])
+        model = LSTMModel()
+        model.load_state_dict(torch.load(model_path))
+        model.eval()
+        x = np.array([[[close]]])
+        x = torch.tensor(x)
+        x = x.to(torch.float32)
+        return model(x).item()
+    else:
+        return data['rsi_14']
