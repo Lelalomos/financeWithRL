@@ -4,3 +4,4 @@ stockstats==0.6.2
 scikit-learn==0.24.2
 pandas==2.0
 torch
+openpyxl
