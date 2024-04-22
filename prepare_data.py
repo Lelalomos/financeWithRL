@@ -9,6 +9,7 @@ import traceback
 
 class prepare_data:
     def __init__(self):
+        os.makedirs(os.path.join(os.getcwd(),'logs'),exist_ok=True)
         self.logging = return_logs(os.path.join(os.getcwd(),'logs','prepare_data.log'))
         
     def download_data(self, ticker_list=[], start_date=None, end_date=None, interval = "1d", proxy = None, engine_download = "yahoo"):
