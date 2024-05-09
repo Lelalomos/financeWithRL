@@ -105,10 +105,10 @@ class train_lstm:
         print(f'Test MSE: {test_loss}')
         
         
-    def for_rsi(self, list_indicator, indicator_name):
+    def for_single_feature(self, list_indicator, indicator_name, column_select):
         data2train_rsi = self.prepare_data(list_indicator)
         # convert data to array
-        close_value = np.array(data2train_rsi['Close'])
+        close_value = np.array(data2train_rsi[column_select])
         rsi_value = np.array(data2train_rsi[indicator_name])
         # filter outlier with z-score
         data, outlier = self.pre_data.cal_zscore(close_value)
@@ -126,6 +126,49 @@ class train_lstm:
                                                             shuffle = self.splitdata_shuffle)
         print('len train:',len(x_train))
         print('len test:',len(x_test))
+        self.train(x_train, y_train)
+        self.eval(x_test, y_test)
+        self.plot_image(self.path_save_loss)
+        self.export_model(self.path_save_model)
+        
+    def for_multiple_feature(self, list_indicator, column_select_data, column_select_label):
+        data2train_rsi = self.prepare_data(list_indicator)
+        
+        data = data2train_rsi[column_select_data+column_select_label]
+        print('len data:',len(data))
+        filter_out = self.pre_data.cal_zscore_df(data)
+        print('filter_out:',len(filter_out))
+        print(filter_out)
+        
+        label = filter_out[column_select_label]
+        data = filter_out[column_select_data]
+        # df_label = label.to_numpy()
+        
+        print('len train:',len(data))
+        print('len test:',len(label))
+        
+        # data['Close'] = self.normalize.normalize_minmax_1d_data(data['Close'])
+        norm_data = self.normalize.norm_each_row_minmax(data)
+        norm_label = self.normalize.norm_each_row_minmax(label)
+        print("norm_data:",norm_data)
+        
+        
+        x_train, x_test, y_train, y_test = train_test_split(norm_data, 
+                                                            norm_label, 
+                                                            random_state = self.splitdata_rd_stage4test, 
+                                                            test_size = self.splitdata_test_size,
+                                                            shuffle = self.splitdata_shuffle)
+        # extract from dataframe
+        x_train = np.array(x_train)
+        y_train = np.array(y_train.values)
+        x_test = np.array(x_test)
+        y_test = np.array(y_test.values)
+        print('data')
+        print(x_train.shape)
+        print('label')
+        print(y_train.shape)
+        # print('len train:',len(x_train))
+        # print('len test:',len(x_test))
         self.train(x_train, y_train)
         self.eval(x_test, y_test)
         self.plot_image(self.path_save_loss)

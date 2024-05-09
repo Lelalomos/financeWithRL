@@ -53,18 +53,27 @@ def main():
     map_tic = {list_tic_unique[i-1]:i for i in range(1,len(list_tic_unique))}
     data_preparing['tic'] = data_preparing['tic'].replace(map_tic)
     
-    data_preparing.to_csv(os.path.join(os.getcwd(),'tests','train.csv'))
+    # data_preparing.to_csv(os.path.join(os.getcwd(),'tests','train_test.csv'))
     
     
     
-def train_lstm4pred(indicator_name):
+def train_lstm4pred_singlefeature(indicator_name):
     prepare = prepare_data()
     data = prepare.download_data(config.TICKET_LIST)
     train_data = train_lstm(data, threshold_loss = 0.001, batch_size = 1024, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{indicator_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{indicator_name}_model.pth'), epochs=100, splitdata_test_size=0.2)
-    train_data.for_rsi(config.INDICATOR_LIST, indicator_name)
+    train_data.for_single_feature(config.INDICATOR_LIST, indicator_name, 'Close')
+    
+def train_lstm4pred_multifeature(indicator_name, list_column_data, list_column_label):
+    prepare = prepare_data()
+    data = prepare.download_data(config.TICKET_LIST)
+    train_data = train_lstm(data, threshold_loss = 0.001, batch_size = 1024, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{indicator_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{indicator_name}_model.pth'), epochs=100, splitdata_test_size=0.2)
+    train_data.for_multiple_feature(config.INDICATOR_LIST, list_column_data, list_column_label)
     
 if __name__ == "__main__":
-    # train_lstm4pred('rsi_14')
-    # train_lstm4pred('stochrsi_14')
+    # train_lstm4pred_singlefeature('rsi_14')
+    # train_lstm4pred_singlefeature('stochrsi_14')
+    # train_lstm4pred('tema_200')
+    # train_lstm4pred_multifeature('vwma_14',["Close","Volume"], ['vwma_14'])
+    
     
     main()

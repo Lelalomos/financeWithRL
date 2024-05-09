@@ -47,6 +47,11 @@ class prepare_data:
         filtered_data = list_data[np.abs(z_scores) < threshold]
         return filtered_data, outlier_indices
     
+    def cal_zscore_df(self, dataframe, threshold = 3):
+        standardized_df = dataframe.apply(zscore)
+        filtered_df = dataframe[(standardized_df < threshold) & (standardized_df > -threshold)].dropna()
+        return filtered_df
+    
     def add_technical_indicator(self, dataframe, tech_indicator_list):
         self.logging.info(f"add technical indicator into dataframe process, tech_indicator_list:{tech_indicator_list}")
         df = dataframe.copy()
