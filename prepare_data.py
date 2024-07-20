@@ -7,7 +7,7 @@ import os
 import yfinance as yf
 import traceback
 import config
-from functions import predict_nanvalue_lstm, return_candle_pattern
+from functions import predict_nanvalue_lstm, return_candle_pattern, predict_nanvalue_lstm_vwma, predict_nanvalue_lstm_ichimoku
 
 class prepare_data:
     def __init__(self):
@@ -105,12 +105,12 @@ class prepare_data:
         rsi_model_path = os.path.join(os.getcwd(),'saved_model','rsi_14_model.pth')
         data_preparing['rsi_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['rsi_14','Close']], 'rsi_14', rsi_model_path),axis=1)
         
-        # stochrsi pred
+        # # stochrsi pred
         print("fill missing value in stochrsi")
         stochrsi_model_path = os.path.join(os.getcwd(),'saved_model','stochrsi_14_model.pth')
         data_preparing['stochrsi_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['stochrsi_14','Close']], "stochrsi_14", stochrsi_model_path),axis=1)
         
-        # tema pred
+        # # tema pred
         print("fill missing value in tema")
         tema_model_path = os.path.join(os.getcwd(),'saved_model','tema_200_model.pth')
         data_preparing['tema_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['tema_200','Close']], "tema_200", tema_model_path),axis=1)
@@ -118,12 +118,12 @@ class prepare_data:
         # vwma 
         print("fill missing value in vwma")
         vwma_model_path = os.path.join(os.getcwd(),'saved_model','vwma_14_model.pth')
-        data_preparing['vwma_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['vwma_14',"Close","Volume"]], "vwma_14", vwma_model_path),axis=1)
+        data_preparing['vwma_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm_vwma(x[['vwma_14',"Close","Volume"]], "vwma_14", vwma_model_path),axis=1)
         
         # ichimoku
         print("fill missing value in ichimoku")
         ichimoku_model_path = os.path.join(os.getcwd(),'saved_model','ichimoku_model.pth')
-        data_preparing['ichimoku_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['ichimoku',"High","Low","Close"]], "ichimoku", ichimoku_model_path),axis=1)
+        data_preparing['ichimoku_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm_ichimoku(x[['ichimoku',"High","Low","Close"]], "ichimoku", ichimoku_model_path),axis=1)
         
         print('data_preparing:')
         print(data_preparing.columns)
@@ -146,4 +146,4 @@ class prepare_data:
     
 if __name__ == "__main__":
     data_pipeline=prepare_data()
-    data = data_pipeline.start(save_file=True)
+    data = data_pipeline.start()

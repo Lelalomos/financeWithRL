@@ -14,8 +14,8 @@ def main():
     data = pd.read_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'),index_col=0)
     
     env = DummyVecEnv([lambda: trading_env(df_train=data)])
-    model = DQN('MlpPolicy', env, verbose=1)
-    model.learn(total_timesteps=10000, progress_bar = True)
+    model = DQN('MlpPolicy', env, verbose=1, batch_size=100000)
+    model.learn(total_timesteps=1000000)
     
     model.save(os.path.join("mlp_rl_mem.zip"))
     

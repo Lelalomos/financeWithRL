@@ -42,6 +42,35 @@ def predict_nanvalue_lstm(data, column_name, model_path):
     else:
         return data[column_name]
     
+def predict_nanvalue_lstm_vwma(data, column_name, model_path):
+    if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
+        close = float(data['Close'])
+        volumn = float(data['Volume'])
+        model = LSTMModel()
+        model.load_state_dict(torch.load(model_path))
+        model.eval()
+        x = np.array([[[close,volumn]]])
+        x = torch.tensor(x)
+        x = x.to(torch.float32)
+        return model(x).item()
+    else:
+        return data[column_name]
+    
+def predict_nanvalue_lstm_ichimoku(data, column_name, model_path):
+    if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
+        close = float(data['Close'])
+        high = float(data['High'])
+        low = float(data['Low'])
+        model = LSTMModel()
+        model.load_state_dict(torch.load(model_path))
+        model.eval()
+        x = np.array([[[close,high,low]]])
+        x = torch.tensor(x)
+        x = x.to(torch.float32)
+        return model(x).item()
+    else:
+        return data[column_name]
+    
 def return_candle_pattern(data):
     # 'Open', 'High', 'Low', 'Close', 'Volume'
     data['CDL2CROWS'] = talib.CDL2CROWS(data['Open'], data['High'], data['Low'], data['Close'])
