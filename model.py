@@ -11,12 +11,12 @@ class trading_env(gym.Env):
                  ):
         super(trading_env, self).__init__()
         self.action_space = spaces.Discrete(3,seed=42, start=0)
-        self.observation_space = spaces.Box(low=0, high=10, shape=(31,12), dtype=np.float16)
+        self.observation_space = spaces.Box(low=0, high=1000, shape=(31,70), dtype=np.float16)
         self.buy = 0
         self.data = df_train
         self.reward = 0
         self.window_size = window_size
-        self.fee = 15
+        self.fee = 0.07
         self.noise = 0.0001
         self.quest = False
         
@@ -42,8 +42,8 @@ class trading_env(gym.Env):
     def _take_action(self, action):
         if action == 0:
             if self.buy == 0:
-                self.buy = float(self.data.loc[self.current_step, "Close"])+self.fee
-                print('buy:',float(self.data.loc[self.current_step, "Close"])+self.fee)
+                self.buy = float(self.data.loc[self.current_step, "Close"])+(float(self.data.loc[self.current_step, "Close"])*self.fee)
+                print('buy:',float(self.data.loc[self.current_step, "Close"])+(float(self.data.loc[self.current_step, "Close"])*self.fee))
             else:
                 self.reward -= (float(self.data.loc[self.current_step, "Close"])+self.fee)*self.noise
                 

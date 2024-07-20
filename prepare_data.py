@@ -6,6 +6,8 @@ from utility import return_logs
 import os
 import yfinance as yf
 import traceback
+import config
+from functions import predict_nanvalue_lstm, return_candle_pattern
 
 class prepare_data:
     def __init__(self):
@@ -79,3 +81,69 @@ class prepare_data:
             )
         df = df.sort_values(by=["Date", "tic"])
         return df
+    
+    def start(self, save_file = False):
+        data = self.download_data(config.TICKET_LIST)
+        data_preparing = self.pre_clean_data(data)
+        data_preparing = self.add_technical_indicator(data_preparing, config.INDICATOR_LIST)
+        
+        data_preparing.drop(["Date"],axis=1,inplace=True)
+        
+        rsi_count = pd.isna(data_preparing['rsi_14']).sum()
+        strsi_count = pd.isna(data_preparing['stochrsi_14']).sum()
+        vwma_count = pd.isna(data_preparing['vwma_14']).sum()
+        tema_count = pd.isna(data_preparing['tema_200']).sum()
+        ichimoku_count = pd.isna(data_preparing['ichimoku']).sum()
+        print('rsi count:',rsi_count)
+        print('strsi_count:',strsi_count)
+        print('vwma_count:',vwma_count)
+        print('tema_count:',tema_count)
+        print('ichimoku_count:',ichimoku_count)
+        
+        # rsi pred
+        print("fill missing value in rsi")
+        rsi_model_path = os.path.join(os.getcwd(),'saved_model','rsi_14_model.pth')
+        data_preparing['rsi_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['rsi_14','Close']], 'rsi_14', rsi_model_path),axis=1)
+        
+        # stochrsi pred
+        print("fill missing value in stochrsi")
+        stochrsi_model_path = os.path.join(os.getcwd(),'saved_model','stochrsi_14_model.pth')
+        data_preparing['stochrsi_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['stochrsi_14','Close']], "stochrsi_14", stochrsi_model_path),axis=1)
+        
+        # tema pred
+        print("fill missing value in tema")
+        tema_model_path = os.path.join(os.getcwd(),'saved_model','tema_200_model.pth')
+        data_preparing['tema_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['tema_200','Close']], "tema_200", tema_model_path),axis=1)
+        
+        # vwma 
+        print("fill missing value in vwma")
+        vwma_model_path = os.path.join(os.getcwd(),'saved_model','vwma_14_model.pth')
+        data_preparing['vwma_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['vwma_14',"Close","Volume"]], "vwma_14", vwma_model_path),axis=1)
+        
+        # ichimoku
+        print("fill missing value in ichimoku")
+        ichimoku_model_path = os.path.join(os.getcwd(),'saved_model','ichimoku_model.pth')
+        data_preparing['ichimoku_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['ichimoku',"High","Low","Close"]], "ichimoku", ichimoku_model_path),axis=1)
+        
+        print('data_preparing:')
+        print(data_preparing.columns)
+        # drop column 
+        data_preparing.drop(['rsi_14','stochrsi_14', 'vwma_14', 'tema_200', 'ichimoku'],axis = 1, inplace=True)
+        
+        data_preparing = return_candle_pattern(data_preparing)
+        
+        # convert tic to integer
+        list_tic_unique = list(data_preparing['tic'].unique())
+        map_tic = {list_tic_unique[i-1]:i for i in range(1,len(list_tic_unique))}
+        data_preparing['tic'] = data_preparing['tic'].replace(map_tic)
+        
+        if save_file:
+            print(f"path data: {os.path.join(os.getcwd(),'dataset')}")
+            os.makedirs(os.path.join(os.getcwd(),'dataset'),exist_ok=True)
+            data_preparing.to_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'))
+        
+        return data_preparing
+    
+if __name__ == "__main__":
+    data_pipeline=prepare_data()
+    data = data_pipeline.start(save_file=True)

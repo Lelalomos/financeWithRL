@@ -5,4 +5,9 @@ TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","
         "IBM","SPCE","PL","RDW","SPIR","BKSY","NIO","XPEV","FSR","LEV","HYLN","BABA","SE","U","SPOT","WAL","RACE","STEM",
         "ACN","HPQ","TSM","SBUX","NKE","XOM","DIS","BA","PLTR","SMCI","MSTR","INTC","CLSK","BABA","BAC","AMC","UNH","UBER",
         "COST","PFE","CRWD","OXY","WMT","LLY","MCD","DELL","SNOW","SOFI","ASML","V","JNJ","PG","ENPH","PEP","MA","ABBV"]
+
+# test
+# TICKET_LIST = ["AAPL","TSLA","NFLX"]
+
 INDICATOR_LIST = ['rsi_14','stochrsi_14','vwma_14','tema_200','ichimoku']
+

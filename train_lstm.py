@@ -7,6 +7,9 @@ from torch.utils.data import TensorDataset, DataLoader
 from model import LSTMModel
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from functions import predict_nanvalue_lstm
+import config
+import os
 
 class train_lstm:
     def __init__(self, 
@@ -185,9 +188,22 @@ class train_lstm:
     def export_model(self, save_model):
         torch.save(self.model.state_dict(), save_model)
         
-        
+def train_lstm4pred_singlefeature(indicator_name):
+    prepare = prepare_data()
+    data = prepare.download_data(config.TICKET_LIST)
+    train_data = train_lstm(data, threshold_loss = 0.001, batch_size = 500, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{indicator_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{indicator_name}_model.pth'), epochs=100, splitdata_test_size=0.2)
+    train_data.for_single_feature(config.INDICATOR_LIST, indicator_name, 'Close')
     
+def train_lstm4pred_multifeature(indicator_name, list_column_data, list_column_label):
+    prepare = prepare_data()
+    data = prepare.download_data(config.TICKET_LIST)
+    train_data = train_lstm(data, threshold_loss = 0.001, batch_size = 500, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{indicator_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{indicator_name}_model.pth'), epochs=100, splitdata_test_size=0.2)
+    train_data.for_multiple_feature(config.INDICATOR_LIST, list_column_data, list_column_label)
     
-        
-        
-        
+if __name__ == "__main__":
+    train_lstm4pred_singlefeature('rsi_14')
+    # train_lstm4pred_singlefeature('stochrsi_14')
+    # train_lstm4pred_singlefeature('tema_200')
+    # train_lstm4pred_multifeature('vwma_14',["Close","Volume"], ['vwma_14'])
+    # train_lstm4pred_multifeature('ichimoku',["High","Low","Close"], ['ichimoku'])
+    

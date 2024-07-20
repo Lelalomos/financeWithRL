@@ -1,11 +1,9 @@
-from functions import prepare_data_forlstm, detect_outliers_iqr, predict_nanvalue_lstm, return_candle_pattern
-from train_lstm import train_lstm
-import config
-from sklearn.model_selection import train_test_split
 from utility import return_logs
 import os
+from stable_baselines3 import DQN
+from stable_baselines3.common.vec_env import DummyVecEnv
+from model import trading_env
 import pandas as pd
-from prepare_data import prepare_data
 
 def main():
     os.makedirs(os.path.join(os.getcwd(),'logs'),exist_ok=True)
@@ -13,67 +11,21 @@ def main():
     os.makedirs(os.path.join(os.getcwd(),'saved_model'),exist_ok=True)
     logging = return_logs(os.path.join(os.getcwd(),'logs','process.log'))
     
-    # init prepare class
-    prepare = prepare_data()
+    data = pd.read_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'),index_col=0)
     
-    logging.info("download data")
-    data = prepare.download_data(config.TICKET_LIST)
-    data_preparing = prepare.pre_clean_data(data)
-    data_preparing = prepare.add_technical_indicator(data_preparing, config.INDICATOR_LIST)
-    print('data_preparing:')
-    print(data_preparing)
+    env = DummyVecEnv([lambda: trading_env(df_train=data)])
+    model = DQN('MlpPolicy', env, verbose=1)
+    model.learn(total_timesteps=10000, progress_bar = True)
     
-    rsi_count = pd.isna(data_preparing['rsi_14']).sum()
-    strsi_count = pd.isna(data_preparing['stochrsi_14']).sum()
-    vwma_count = pd.isna(data_preparing['vwma_14']).sum()
-    tema_count = pd.isna(data_preparing['tema_200']).sum()
-    ichimoku_count = pd.isna(data_preparing['ichimoku']).sum()
-    print('rsi count:',rsi_count)
-    print('strsi_count:',strsi_count)
-    print('vwma_count:',vwma_count)
-    print('tema_count:',tema_count)
-    print('ichimoku_count:',ichimoku_count)
-    
-    # rsi pred
-    rsi_model_path = os.path.join(os.getcwd(),'saved_model','rsi_14_model.pth')
-    data_preparing['rsi_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['rsi_14','Close']], 'rsi_14', rsi_model_path),axis=1)
-    
-    # stochrsi pred
-    stochrsi_model_path = os.path.join(os.getcwd(),'saved_model','stochrsi_14_model.pth')
-    data_preparing['stochrsi_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['stochrsi_14','Close']], "stochrsi_14", stochrsi_model_path),axis=1)
-    print('data_preparing:')
-    print(data_preparing.columns)
-    # drop column 
-    data_preparing.drop(['rsi_14','stochrsi_14'],axis = 1, inplace=True)
-    
-    data_preparing = return_candle_pattern(data_preparing)
-    
-    # convert tic to integer
-    list_tic_unique = list(data_preparing['tic'].unique())
-    map_tic = {list_tic_unique[i-1]:i for i in range(1,len(list_tic_unique))}
-    data_preparing['tic'] = data_preparing['tic'].replace(map_tic)
-    
-    # data_preparing.to_csv(os.path.join(os.getcwd(),'tests','train_test.csv'))
+    model.save(os.path.join("mlp_rl_mem.zip"))
     
     
     
-def train_lstm4pred_singlefeature(indicator_name):
-    prepare = prepare_data()
-    data = prepare.download_data(config.TICKET_LIST)
-    train_data = train_lstm(data, threshold_loss = 0.001, batch_size = 1024, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{indicator_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{indicator_name}_model.pth'), epochs=100, splitdata_test_size=0.2)
-    train_data.for_single_feature(config.INDICATOR_LIST, indicator_name, 'Close')
     
-def train_lstm4pred_multifeature(indicator_name, list_column_data, list_column_label):
-    prepare = prepare_data()
-    data = prepare.download_data(config.TICKET_LIST)
-    train_data = train_lstm(data, threshold_loss = 0.001, batch_size = 1024, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{indicator_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{indicator_name}_model.pth'), epochs=100, splitdata_test_size=0.2)
-    train_data.for_multiple_feature(config.INDICATOR_LIST, list_column_data, list_column_label)
     
+    
+    
+        
 if __name__ == "__main__":
-    # train_lstm4pred_singlefeature('rsi_14')
-    # train_lstm4pred_singlefeature('stochrsi_14')
-    # train_lstm4pred('tema_200')
-    # train_lstm4pred_multifeature('vwma_14',["Close","Volume"], ['vwma_14'])
-    
     
     main()
