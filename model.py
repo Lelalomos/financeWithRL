@@ -18,7 +18,7 @@ class trading_env(gym.Env):
         self.fee = 0.07
         self.noise = 0.0001
         self.quest = False
-        self.max_step = len(df_train.index)-window_size
+        self.max_step = len(df_train.index)-(window_size*2)
         # self._random_state = np.random.RandomState(seed=42)
         
     def reset(self, seed=None, options=None):
@@ -42,7 +42,9 @@ class trading_env(gym.Env):
             self.reset()
             
         reward = self._take_action(actions)
+        print("reward:",reward)
         obs = self._next_observation()
+        print("obs:",obs)
             
         return obs, reward, self.quest, False, {}
     
