@@ -22,7 +22,7 @@ class trading_env(gym.Env):
         # self._random_state = np.random.RandomState(seed=42)
         
     def reset(self, seed=None, options=None):
-        self.current_step = np.random.randint(0,self.max_step)
+        self.current_step = np.random.randint(0, self.max_step)
         self.quest = False
         self.buy = 0
         return self._next_observation(), {}
@@ -42,9 +42,7 @@ class trading_env(gym.Env):
             self.reset()
             
         reward = self._take_action(actions)
-        print("reward:",reward)
         obs = self._next_observation()
-        print("obs:",obs)
             
         return obs, reward, self.quest, False, {}
     

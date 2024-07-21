@@ -134,8 +134,12 @@ class prepare_data:
         
         # convert tic to integer
         list_tic_unique = list(data_preparing['tic'].unique())
-        map_tic = {list_tic_unique[i-1]:i for i in range(1,len(list_tic_unique))}
+        map_tic = {}
+        for i,key in enumerate(list_tic_unique):
+            map_tic[key] = i
+            
         data_preparing['tic'] = data_preparing['tic'].replace(map_tic)
+        
         
         if save_file:
             print(f"path data: {os.path.join(os.getcwd(),'dataset')}")
