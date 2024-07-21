@@ -10,7 +10,7 @@ class trading_env(gym.Env):
                  window_size = 31
                  ):
         super(trading_env, self).__init__()
-        self.action_space = spaces.Discrete(3,seed=42, start=0)
+        self.action_space = spaces.Discrete(2,seed=42, start=0)
         self.observation_space = spaces.Box(low=0, high=1000, shape=(31,70), dtype=np.float16)
         self.buy = 0
         self.data = df_train
@@ -36,6 +36,8 @@ class trading_env(gym.Env):
         obs = self._next_observation()
         if self.quest:
             print('reward:',self.reward)
+            self.reset()
+            return None, self.reward, self.quest, False,{}
             
         return obs, self.reward, self.quest, False, {}
     
@@ -45,24 +47,31 @@ class trading_env(gym.Env):
                 self.buy = float(self.data.loc[self.current_step, "Close"])+(float(self.data.loc[self.current_step, "Close"])*self.fee)
                 print('buy:',float(self.data.loc[self.current_step, "Close"])+(float(self.data.loc[self.current_step, "Close"])*self.fee))
             else:
-                self.reward -= (float(self.data.loc[self.current_step, "Close"])+self.fee)*self.noise
+                # self.reward -= (float(self.data.loc[self.current_step, "Close"])+self.fee)*self.noise
+                self.reward -= self.noise
+                print("not sell")
                 
         elif action == 1:
-            sell = self.data.loc[self.current_step, "Close"]
-            rest = float(sell) - float(self.buy)
-            print('sell step, buy:',self.buy)
-            print('sell:',sell)
-            if rest >0:
+            if float(self.buy) > 0:
+                sell = self.data.loc[self.current_step, "Close"]
+                rest = float(sell) - float(self.buy)
+                print('sell:',self.buy, sell)
                 print('rest:',rest)
-                self.reward += rest*self.noise
-                self.quest = True
+                if rest >0:
+                    print("rewad +:","{:.20f}".format(rest))
+                    self.reward += rest*self.noise
+                    self.quest = True
+                elif rest < 0:
+                    print("rewad -:",rest*self.noise)
+                    self.reward -= rest*self.noise
+                    
+                self.buy = 0
             else:
-                self.reward -= rest*self.noise
-                
-            self.buy = 0
+                self.reward -= self.noise
         else:
             self.reward -= self.noise
-            
+        
+        
     def render(self, mode = 'human', close=False):
         print(f'reward: {self.reward}')
         
