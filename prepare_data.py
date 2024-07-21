@@ -146,4 +146,4 @@ class prepare_data:
     
 if __name__ == "__main__":
     data_pipeline=prepare_data()
-    data = data_pipeline.start()
+    data = data_pipeline.start(save_file=True)
