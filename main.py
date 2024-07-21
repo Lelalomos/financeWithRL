@@ -1,6 +1,6 @@
 from utility import return_logs
 import os
-from stable_baselines3 import DQN
+from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from model import trading_env
 import pandas as pd
@@ -18,9 +18,9 @@ def main():
     
     data['Volume'] = normalize_func.normalize_minmax_1d_data(data['Volume'].to_numpy())
     
-    env = DummyVecEnv([lambda: trading_env(df_train=data)])
-    model = DQN('MlpPolicy', env, verbose=1, batch_size=100000)
-    model.learn(total_timesteps=1000000)
+    env = DummyVecEnv([lambda: trading_env(df_train=data, window_size=120)])
+    model = PPO('MlpPolicy', env, verbose=1, batch_size=10000, n_epochs= 100)
+    model.learn(total_timesteps=100000)
     
     model.save(os.path.join("mlp_rl_mem.zip"))
     

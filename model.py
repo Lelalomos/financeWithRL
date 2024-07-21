@@ -11,69 +11,78 @@ class trading_env(gym.Env):
                  ):
         super(trading_env, self).__init__()
         self.action_space = spaces.Discrete(2,seed=42, start=0)
-        self.observation_space = spaces.Box(low=0, high=1000, shape=(31,70), dtype=np.float16)
+        self.observation_space = spaces.Box(low=-1000, high=1000, shape=(window_size,len(df_train.columns)), dtype=np.float16)
         self.buy = 0
         self.data = df_train
-        self.reward = 0
         self.window_size = window_size
         self.fee = 0.07
         self.noise = 0.0001
         self.quest = False
+        self.max_step = len(df_train.index)-window_size
+        # self._random_state = np.random.RandomState(seed=42)
         
     def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
-        self.current_step = 0
+        self.current_step = np.random.randint(0,self.max_step)
         self.quest = False
         self.buy = 0
         return self._next_observation(), {}
     
     def _next_observation(self):
         state = self.data.iloc[self.current_step:self.current_step + self.window_size]
+        if self.current_step >= len(self.data) - 1:
+            self.quest = True
+        else:
+            self.quest = False
+        self.current_step+=1
+            
         return state.values
     
     def step(self, actions):
-        self._take_action(actions)
-        obs = self._next_observation()
         if self.quest:
-            print('reward:',self.reward)
             self.reset()
-            return None, self.reward, self.quest, False,{}
             
-        return obs, self.reward, self.quest, False, {}
+        reward = self._take_action(actions)
+        obs = self._next_observation()
+            
+        return obs, reward, self.quest, False, {}
     
     def _take_action(self, action):
+        reward = 0
         if action == 0:
             if self.buy == 0:
                 self.buy = float(self.data.loc[self.current_step, "Close"])+(float(self.data.loc[self.current_step, "Close"])*self.fee)
+                reward += self.noise
                 print('buy:',float(self.data.loc[self.current_step, "Close"])+(float(self.data.loc[self.current_step, "Close"])*self.fee))
             else:
                 # self.reward -= (float(self.data.loc[self.current_step, "Close"])+self.fee)*self.noise
-                self.reward -= self.noise
+                reward -= self.noise
                 print("not sell")
                 
         elif action == 1:
             if float(self.buy) > 0:
+                reward += self.noise
                 sell = self.data.loc[self.current_step, "Close"]
                 rest = float(sell) - float(self.buy)
                 print('sell:',self.buy, sell)
                 print('rest:',rest)
-                if rest >0:
+                if rest >0 and self.buy == 0:
                     print("rewad +:","{:.20f}".format(rest))
-                    self.reward += rest*self.noise
-                    self.quest = True
+                    reward += rest*self.noise
                 elif rest < 0:
                     print("rewad -:",rest*self.noise)
-                    self.reward -= rest*self.noise
+                    reward -= rest*self.noise
                     
                 self.buy = 0
             else:
-                self.reward -= self.noise
+                reward -= self.noise
         else:
-            self.reward -= self.noise
+            reward -= self.noise
+            
+        return reward
         
         
     def render(self, mode = 'human', close=False):
-        print(f'reward: {self.reward}')
+        pass
         
         
 # Define the LSTM model
