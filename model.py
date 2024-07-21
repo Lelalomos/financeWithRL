@@ -18,7 +18,7 @@ class trading_env(gym.Env):
         self.fee = 0.07
         self.noise = 0.0001
         self.quest = False
-        self.max_step = len(df_train.index)-(window_size*2)
+        self.max_step = len(df_train.index)-(window_size)
         # self._random_state = np.random.RandomState(seed=42)
         
     def reset(self, seed=None, options=None):
@@ -28,13 +28,15 @@ class trading_env(gym.Env):
         return self._next_observation(), {}
     
     def _next_observation(self):
-        state = self.data.iloc[self.current_step:self.current_step + self.window_size]
-        if self.current_step >= len(self.data) - 1:
+        # 329430 is error
+        # 329312 error when plus
+        if self.current_step >= self.max_step:
             self.quest = True
         else:
             self.quest = False
-        self.current_step+=1
             
+        state = self.data.iloc[self.current_step:self.current_step + self.window_size]
+        self.current_step+=1
         return state.values
     
     def step(self, actions):
