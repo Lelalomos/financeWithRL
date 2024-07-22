@@ -7,7 +7,6 @@ from torch.utils.data import TensorDataset, DataLoader
 from model import LSTMModel
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from functions import predict_nanvalue_lstm
 import config
 import os
 
