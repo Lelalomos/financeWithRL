@@ -5,6 +5,9 @@ from model import trading_env
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 from stable_baselines3 import PPO
 import os
+from gymnasium.envs.registration import register
+import gymnasium as gym
+
 
 class train_rl:
     def __init__(self, dataset:pd.DataFrame = None, 
@@ -22,7 +25,7 @@ class train_rl:
         self.n_epochs = n_epochs
         self.total_timesteps = total_timesteps
         
-        assert dataset is None, "data is not found"
+        assert dataset is not None, "data is not found"
     
     def prepare_data(self):
         normalize_func = normalization_data()
@@ -47,5 +50,16 @@ class train_rl:
         
         
 if __name__ == "__main__":
-    model_rl = train_rl()
-    model_rl.start()
+    data = pd.read_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'),index_col=0)
+    
+    register(
+            id='trading_env-v0',
+            entry_point='model:trading_env'
+    )
+    
+    env = gym.make('trading_env-v0', df_train=data)
+    
+    # model_rl = train_rl(dataset=data)
+    # model_rl.start()
+    
+    # env = gym.make('train_rl-v0', dataset=data)

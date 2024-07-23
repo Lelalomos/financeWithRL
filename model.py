@@ -83,8 +83,8 @@ class trading_env(gym.Env):
         return reward
         
         
-    def render(self, mode = 'human', close=False):
-        pass
+    def render(self, mode='human', close=False):
+        print(f'Step: {self.current_step}')
         
         
 # Define the LSTM model
