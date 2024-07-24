@@ -1,7 +1,7 @@
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 import torch
-from model import LSTMModel
+from model.model import LSTMModel
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import os

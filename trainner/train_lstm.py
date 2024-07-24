@@ -1,10 +1,10 @@
-from prepare_data import prepare_data
-from normalization import normalization_data
+from utils.prepare_data import prepare_data
+from utils.normalization import normalization_data
 from sklearn.model_selection import train_test_split
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from model import LSTMModel
+from model.model import LSTMModel
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import config

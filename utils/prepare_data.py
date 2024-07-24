@@ -2,7 +2,7 @@ from stockstats import StockDataFrame as Sdf
 import pandas as pd
 import numpy as np
 from scipy.stats import zscore
-from utility import return_logs
+from utils import return_logs
 import os
 import yfinance as yf
 import traceback

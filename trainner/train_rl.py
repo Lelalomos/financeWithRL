@@ -1,7 +1,7 @@
 import pandas as pd
-from normalization import normalization_data
+from utils.normalization import normalization_data
 from stable_baselines3.common.vec_env import DummyVecEnv
-from model import trading_env
+from model.model import trading_env
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 from stable_baselines3 import PPO
 import os
@@ -50,14 +50,13 @@ class train_rl:
         
         
 if __name__ == "__main__":
-    data = pd.read_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'),index_col=0)
-    
+    # data = pd.read_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'),index_col=0)
     register(
             id='trading_env-v0',
             entry_point='model:trading_env'
     )
     
-    env = gym.make('trading_env-v0', df_train=data)
+    # env = gym.make('trading_env-v0', df_train=data)
     
     # model_rl = train_rl(dataset=data)
     # model_rl.start()

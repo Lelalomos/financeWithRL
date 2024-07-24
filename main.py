@@ -1,4 +1,4 @@
-from utility import return_logs
+from utils import return_logs
 import os
 import pandas as pd
 # from train_rl import follow_tendline
@@ -13,7 +13,7 @@ def main():
     
     # train reinforcement learning
     logging.info("train reinforcement leaning")
-    data = pd.read_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'),index_col=0)
+    # data = pd.read_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'),index_col=0)
     
     
     # model_rl = train_rl(dataset=data)
