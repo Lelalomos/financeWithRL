@@ -1,0 +1,3 @@
+[submodule "stockstats"]
+	path = stockstats
+	url = https://github.com/Lelalomos/stockstats.git
