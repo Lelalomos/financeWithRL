@@ -1,10 +1,10 @@
-from utils.prepare_data import prepare_data
-from utils.normalization import normalization_data
+from utils import prepare_data
+from utils import normalization_data
 from sklearn.model_selection import train_test_split
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from model.model import LSTMModel
+from model import LSTMModel
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import config
@@ -187,16 +187,16 @@ class train_lstm:
     def export_model(self, save_model):
         torch.save(self.model.state_dict(), save_model)
         
-def train_lstm4pred_singlefeature(indicator_name):
+def train_lstm4pred_singlefeature(indicator_name, save_name, batch_size = 500, epochs=100):
     prepare = prepare_data()
     data = prepare.download_data(config.TICKET_LIST)
-    train_data = train_lstm(data, threshold_loss = 0.001, batch_size = 500, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{indicator_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{indicator_name}_model.pth'), epochs=100, splitdata_test_size=0.2)
+    train_data = train_lstm(data, threshold_loss = 0.001, batch_size = batch_size, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{save_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{save_name}_model.pth'), epochs = epochs, splitdata_test_size=0.2)
     train_data.for_single_feature(config.INDICATOR_LIST, indicator_name, 'Close')
     
-def train_lstm4pred_multifeature(indicator_name, list_column_data, list_column_label):
+def train_lstm4pred_multifeature(indicator_name, list_column_data, list_column_label, batch_size = 500, epochs=100):
     prepare = prepare_data()
     data = prepare.download_data(config.TICKET_LIST)
-    train_data = train_lstm(data, threshold_loss = 0.001, batch_size = 500, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{indicator_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{indicator_name}_model.pth'), epochs=100, splitdata_test_size=0.2)
+    train_data = train_lstm(data, threshold_loss = 0.001, batch_size = batch_size, path_save_loss= os.path.join(os.getcwd(),'logs_images',f'loss_{indicator_name}.jpg'), path_save_model= os.path.join(os.getcwd(),'saved_model',f'{indicator_name}_model.pth'), epochs=epochs, splitdata_test_size=0.2)
     train_data.for_multiple_feature(config.INDICATOR_LIST, list_column_data, list_column_label)
     
 if __name__ == "__main__":

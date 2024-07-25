@@ -2,11 +2,12 @@ from stockstats import StockDataFrame as Sdf
 import pandas as pd
 import numpy as np
 from scipy.stats import zscore
-from utils import return_logs
+import config
+from utils.logger import return_logs
 import os
 import yfinance as yf
 import traceback
-import config
+
 from functions import predict_nanvalue_lstm, return_candle_pattern, predict_nanvalue_lstm_vwma, predict_nanvalue_lstm_ichimoku
 
 class prepare_data:
