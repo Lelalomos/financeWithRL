@@ -5,8 +5,6 @@ from model import trading_env
 from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 from stable_baselines3 import PPO
 import os
-from gymnasium.envs.registration import register
-import gymnasium as gym
 
 
 class train_rl:

@@ -84,17 +84,27 @@ class prepare_data:
         return df
     
     def collect_data(self, add_indicator = True, add_candle = True):
-        data = self.download_data(config.TICKET_LIST, interval="1h")
+        data = self.download_data(config.TICKET_LIST, interval="1d")
         data = self.pre_clean_data(data)
-        data = self.add_technical_indicator(data, config.INDICATOR_LIST)
-        data.drop(["Date"],axis=1,inplace=True)
-    
-    def fill_missing_value(self, data, predict_missing = True, save_file = False):
-        data_preparing = self.pre_clean_data(data)
-        data_preparing = self.add_technical_indicator(data_preparing, config.INDICATOR_LIST)
-        data_preparing.drop(["Date"],axis=1,inplace=True)
+        if add_indicator:
+            data = self.add_technical_indicator(data, config.INDICATOR_LIST)
+        if add_candle:
+            data = return_candle_pattern(data)
+            
+        # convert tic to integer
+        list_tic_unique = list(data['tic'].unique())
+        map_tic = {}
+        for i,key in enumerate(list_tic_unique):
+            map_tic[key] = i
+            
+        data['tic'] = data['tic'].replace(map_tic)
         
-        if predict_missing:
+        data.drop(["Date"],axis=1,inplace=True)
+        return data
+    
+    def filling_missing_value(self, data, predict_missing = "lstm", method_interpolate = None):
+        data_preparing = data.copy()
+        if predict_missing == "lstm":
             # rsi pred
             print("fill missing value in rsi")
             rsi_model_path = os.path.join(os.getcwd(),'saved_model','rsi_14_model.pth')
@@ -123,32 +133,26 @@ class prepare_data:
             print('data_preparing:')
             print(data_preparing.columns)
             # drop column 
-            data_preparing.drop(['rsi_14','stochrsi_14', 'vwma_14', 'tema_200', 'ichimoku'],axis = 1, inplace=True)
-        else:
+            data_preparing.drop(config.INDICATOR_LIST,axis = 1, inplace=True)
+        elif predict_missing == "default_value":
             # fill missing value with default value
-            list_indicator = ['rsi_14','stochrsi_14', 'vwma_14', 'tema_200', 'ichimoku']
-            for indicators in list_indicator:
+            for indicators in config.INDICATOR_LIST:
                 data_preparing[indicators] = data_preparing.apply(lambda x :refill_missingvalue(x, indicators),axis=1)
-        
-        data_preparing = return_candle_pattern(data_preparing)
-        
-        # convert tic to integer
-        list_tic_unique = list(data_preparing['tic'].unique())
-        map_tic = {}
-        for i,key in enumerate(list_tic_unique):
-            map_tic[key] = i
-            
-        data_preparing['tic'] = data_preparing['tic'].replace(map_tic)
-        
-        
-        if save_file:
-            print(f"path data: {os.path.join(os.getcwd(),'dataset')}")
-            os.makedirs(os.path.join(os.getcwd(),'dataset'),exist_ok=True)
-            data_preparing.to_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'))
+        elif predict_missing == "interpolate":
+            for indicators in config.INDICATOR_LIST:
+                if method_interpolate is None:
+                    data_preparing[indicators] = data_preparing[indicators].interpolate(method='linear')
+                else:
+                    data_preparing[indicators] = data_preparing[indicators].interpolate(method= method_interpolate)
+        elif predict_missing == "remove_nan":
+            for indicators in config.INDICATOR_LIST:
+                data_preparing = data_preparing.dropna(how='any')
         
         return data_preparing
     
 if __name__ == "__main__":
     data_pipeline=prepare_data()
-    data = data_pipeline.download_data(ticker_list = config.TICKET_LIST)
-    data = data_pipeline.start(save_file=False,data=data)
+    data = data_pipeline.collect_data()
+    print(data)
+    # data = data_pipeline.download_data(ticker_list = config.TICKET_LIST)
+    # data = data_pipeline.start(save_file=False,data=data)
