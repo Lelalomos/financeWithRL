@@ -6,3 +6,6 @@ pandas==2.0
 torch
 openpyxl
 stable_baselines3
+pyarrow
+seaborn
+fastparquet

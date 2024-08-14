@@ -29,51 +29,79 @@ def detect_outliers_iqr(data, threshold=1.5):
     return len(np.where((data < lower_bound) | (data > upper_bound))[0])
 
 
-def predict_nanvalue_lstm(data, column_name, model_path, default_value = 0):
+def predict_nanvalue_lstm(data, column_name, model_path, device, default_value = 0):
     if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
         close = float(data['Close'])
         model = LSTMModel()
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model.to(device)
         model.eval()
         x = np.array([[[close]]])
-        x = torch.tensor(x)
+        x = torch.tensor(x, dtype=torch.float32).to(device)
         x = x.to(torch.float32)
-        prediction = model(x).item()
+        
+        with torch.no_grad():
+            prediction = model(x).item()
+            
         if np.isnan(prediction):
             prediction = default_value
         return prediction
     else:
         return data[column_name]
     
-def predict_nanvalue_lstm_vwma(data, column_name, model_path, default_value = 0):
+def predict_lstm(close_value, model_path, device, default_value = 0):
+    # print("device",device)
+    close = float(close_value)
+    model = LSTMModel()
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.to(device)
+    model.eval()
+    x = np.array([[[close]]])
+    x = torch.tensor(x, dtype=torch.float32).to(device)
+    x = x.to(torch.float32)
+    
+    with torch.no_grad():
+        prediction = model(x).item()
+        
+    if np.isnan(prediction):
+        prediction = default_value
+        
+    return prediction
+    
+def predict_nanvalue_lstm_vwma(data, column_name, model_path, device, default_value = 0):
     if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
         close = float(data['Close'])
         volumn = float(data['Volume'])
         model = LSTMModel()
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model.to(device)
         model.eval()
         x = np.array([[[close,volumn]]])
-        x = torch.tensor(x)
+        x = torch.tensor(x,dtype=torch.float32).to(device)
         x = x.to(torch.float32)
-        prediction = model(x).item()
+        with torch.no_grad():
+            prediction = model(x).item()
+            
         if np.isnan(prediction):
             prediction = default_value
         return prediction
     else:
         return data[column_name]
     
-def predict_nanvalue_lstm_ichimoku(data, column_name, model_path, default_value = 0):
+def predict_nanvalue_lstm_ichimoku(data, column_name, model_path, device, default_value = 0):
     if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
         close = float(data['Close'])
         high = float(data['High'])
         low = float(data['Low'])
         model = LSTMModel()
-        model.load_state_dict(torch.load(model_path))
+        model.load_state_dict(torch.load(model_path, map_location=device))
+        model.to(device)
         model.eval()
         x = np.array([[[close,high,low]]])
-        x = torch.tensor(x)
+        x = torch.tensor(x,dtype=torch.float32).to(device)
         x = x.to(torch.float32)
-        prediction = model(x).item()
+        with torch.no_grad():
+            prediction = model(x).item()
         if np.isnan(prediction):
             prediction = default_value
         return prediction
