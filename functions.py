@@ -49,7 +49,7 @@ def predict_nanvalue_lstm(data, column_name, model_path, device, default_value =
     else:
         return data[column_name]
     
-def predict_lstm(close_value, model_path, device, default_value = 0):
+def predict_lstm_single(close_value, model_path, device, default_value = 0):
     # print("device",device)
     close = float(close_value)
     model = LSTMModel()
