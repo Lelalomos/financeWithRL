@@ -62,16 +62,21 @@ class train_lstm:
     def train(self, train_X, train_Y):
         train_X = torch.tensor(train_X, dtype=torch.float32).to(self.device)
         train_Y = torch.tensor(train_Y, dtype=torch.float32).to(self.device)
-        print('shape:',train_X.shape)
+        print('shape:',train_X.shape[1])
         train_dataset = TensorDataset(train_X, train_Y)
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=self.shuffle_train)
-        model = LSTMModel(input_size=train_X.shape[1]).to(self.device)
+        self.model = LSTMModel(input_size=train_X.shape[1]).to(self.device)
+        
+        print("-"*20,"Model","-"*20)
+        for name, param in self.model.state_dict().items():
+            print(f"{name}: {param.shape}")
+        print("-"*50)
         
         # Train the model
         for epoch in range(self.epochs):
             for inputs, labels in train_loader:
                 self.optimizer.zero_grad()
-                outputs = model(inputs)
+                outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels.unsqueeze(1))
                 loss.backward()
                 self.optimizer.step()
@@ -82,24 +87,24 @@ class train_lstm:
                 if self.debug_loss:
                     if loss.item() < self.threshold_loss:
                         print(f'Loss is below threshold ({self.threshold_loss}), saving the model...')
-                        torch.save(model.state_dict(), 'model.pth')
+                        torch.save(self.model.state_dict(), 'model.pth')
                         break
 
         
     def eval(self, test_X, test_Y):
         test_X = torch.tensor(test_X, dtype=torch.float32).to(self.device)
         test_Y = torch.tensor(test_Y, dtype=torch.float32).to(self.device)
-        model = LSTMModel(input_size=test_X.shape[1]).to(self.device)
+        self.model = LSTMModel(input_size=test_X.shape[1]).to(self.device)
         test_dataset = TensorDataset(test_X, test_Y)
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=self.shuffle_test)
         
         # Test the model
-        model.eval()
+        self.model.eval()
         test_loss = 0
         with torch.no_grad():
             for inputs, labels in test_loader:
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
-                outputs = model(inputs)
+                outputs = self.model(inputs)
                 loss = self.criterion(outputs, labels.unsqueeze(1))
                 test_loss += loss.item()
         test_loss /= len(test_loader)
@@ -200,9 +205,9 @@ def train_lstm4pred_multifeature(indicator_name, list_column_data, list_column_l
     train_data.for_multiple_feature(config.INDICATOR_LIST, list_column_data, list_column_label)
     
 if __name__ == "__main__":
-    train_lstm4pred_singlefeature('rsi_14')
+    # train_lstm4pred_singlefeature('rsi_14')
     # train_lstm4pred_singlefeature('stochrsi_14')
     # train_lstm4pred_singlefeature('tema_200')
-    # train_lstm4pred_multifeature('vwma_14',["Close","Volume"], ['vwma_14'])
+    train_lstm4pred_multifeature('vwma_14',["Close","Volume"], ['vwma_14'])
     # train_lstm4pred_multifeature('ichimoku',["High","Low","Close"], ['ichimoku'])
     
