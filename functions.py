@@ -1,7 +1,7 @@
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 import torch
-from model.model import LSTMModel
+from model import  LSTMModel
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import os
@@ -67,7 +67,24 @@ def predict_lstm_single(close_value, model_path, device, default_value = 0):
         prediction = default_value
         
     return prediction
+
+def predict_lstm_multiple(data:pd.Series, model_path:str, device, default_value = 0):
+    model = LSTMModel(input_size=len(data.keys()))
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.to(device)
+    model.eval()
+    x = np.array([[data]])
+    x = torch.tensor(x,dtype=torch.float32).to(device)
+    x = x.to(torch.float32)
+    with torch.no_grad():
+        prediction = model(x).item()
+        
+    if np.isnan(prediction):
+        prediction = default_value
+        
+    return prediction
     
+# must fix parameter model and parameter data
 def predict_nanvalue_lstm_vwma(data, column_name, model_path, device, default_value = 0):
     if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
         close = float(data['Close'])
