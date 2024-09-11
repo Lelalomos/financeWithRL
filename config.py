@@ -2,33 +2,39 @@ TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","
         "LI","NEE","ON","NIU","ZM","MMM","DUOL","COIN","AVGO","ABNB","QCOM","LOGI","WDC","DBX","CFLT","AMD","ORCL","CRM","MDB","EBAY",
         "IBM","BABA","SE","U","SPOT","WAL","RACE","ACN","HPQ","TSM","SBUX","NKE","XOM","DIS","BA","PLTR","SMCI","MSTR","INTC",
         "CLSK","BAC","AMC","UNH","UBER","COST","PFE","CRWD","OXY","WMT","LLY","MCD","DELL","SNOW","SOFI","ASML","V","CELH","HIMS"
-        "JNJ","PG","ENPH","PEP","MA","ABBV","GRAB","KO","PDD","TMDX","ARM","MU", "JPM", "PANW","CHWY","F","JD","MRNA","CVX","RBLX","MRK",
+        "JNJ","PG","ENPH","PEP","MA","ABBV","GRAB","KO","PDD","TMDX","ARM","MU","JPM", "PANW","CHWY","F","JD","MRNA","CVX","RBLX","MRK",
         "RDDT","BIDU","RTX","PINS","WBD","HSY","HPE","TM","GTLB","NOC","BILI","MDLZ","K","WIX","MSI","NVO","PVH","CDNA","BOX","ANF","AMBA",
-        "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB"]
+        "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA"]
 
-# PLTR
+# ADI
 SECTOR_GROUP = {
-        "software":["MSFT","NFLX","GOOGL","META","ADBE","ZM","DUOL","COIN","ABNB","CRM","MDB","EBAY","BABA",
-                    "SE","U","SPOT","ACN","DIS"],
-        "ecommerce":["EBAY","BABA","SE"],
-        "community":["META","GOOGL","ZM"],
-        "entertain":["NFLX","AMZN","DIS"],
-        "cloud":["AMZN","GOOGL","DBX","CFLT","ORCL","IBM"],
-        "chip":["ON","AAPL","NVDA","AVGO","QCOM","AMD","TSM"],
-        "hardware":["LOGI","AMZN","MSFT","WDC","HPQ"],
-        "auto":["TSLA", "LI","NIU","RACE"],
+        "software":["MSFT","NFLX","GOOGL","META","ADBE","ZM","DUOL","COIN","ABNB","CRM","MDB","EBAY",
+                    "BABA","U","SPOT","ACN","DIS","RDDT","BIDU","PINS","GTLB","WIX","BOX","AMBA","TCOM",
+                    "WDAY"],
+        "security":["CRWD","PANW","S"],
+        "ecommerce":["EBAY","BABA","SE","PDD","JD"],
+        "community":["META","GOOGL","ZM","RDDT","MSI"],
+        "entertain":["NFLX","AMZN","DIS","AMC","BIDU","WBD","BILI"],
+        "cloud":["AMZN","GOOGL","DBX","CFLT","ORCL","IBM","CLSK","SNOW"],
+        "chip":["ON","AAPL","NVDA","AVGO","QCOM","AMD","TSM","SMCI","INTC","ASML","ARM","SNPS"],
+        "hardware":["LOGI","AMZN","MSFT","WDC","HPQ","INTC","AAPL","NVDA","AMD","DELL","MU","HPE","MSI"],
+        "auto":["TSLA","LI","NIU","RACE","F","TM"],
         "bio":["BNTX"],
-        "finance":["PYPL","INTU","COIN","WAL"],
+        "finance":["PYPL","INTU","COIN","WAL","BAC","SOFI","V","MA","JPM","INTU"],
         "network":["CSCO"],
-        "energy":["NEE","XOM"],
-        "utility":["MMM","AMZN","NKE"],
+        "energy":["NEE","XOM", "OXY", "ENPH","CVX","BHP"],
+        "utility":["MMM","AMZN","NKE","COST","WMT","PG","PVH","ANF","M"],
         "phone":["AAPL", "GOOGL"],
         "study":["DUOL"],
-        "crypto":["COIN"],
-        "rent":["ABNB"],
-        "food":["SBUX"],
+        "delivery":["UBER","GRAB"],
+        "crypto":["COIN","MSTR","CLSK"],
+        "rent":["ABNB","TCOM"],
+        "food":["SBUX","MCD","CELH","PEP","KO","HSY","MDLZ","K"],
+        "pet":["CHWY"],
         "aircraft":["BA"],
-        "health":[]
+        "game":["RBLX","U","EA","NTES"],
+        "health":["UNH","PFE","LLY","HIMS","JNJ", "ABBV","TMDX","MRNA","MRK","NVO","CDNA","A"],
+        "astros":["RTX","NOC"]
 }
 
 # test
