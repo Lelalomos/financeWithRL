@@ -195,4 +195,33 @@ def return_candle_pattern(data):
     
     return data
     
+# calculate indicator
+def cal_rsi(value):
+    value = float(value)
+    if value >= 0.7:
+        return 1
+    elif value <= 0.3:
+        return -1
+    else:
+        return 0
     
+def cal_storsi(value):
+    value = float(value)
+    if value >= 0.8:
+        return 1
+    elif value <= 0.2:
+        return -1
+    else:
+        return 0
+    
+def cal_tema(value, min_tema, max_tema):
+    tema_min = value[f'tema_{min_tema}']
+    tema_max = value[f'tema_{max_tema}']
+    tema_min = float(tema_min)
+    tema_max = float(tema_max)
+    if tema_min > tema_max:
+        return 1
+    elif tema_min < tema_max:
+        return -1
+    else:
+        return 0

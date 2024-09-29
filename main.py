@@ -21,7 +21,7 @@ def main():
     else:
         # data = pdata_func.download_data(config.TICKET_LIST)
         data = pdata_func.collect_data(True,True)
-        data.to_parquet("data/dataset.parquet")
+        data.to_parquet("data/original_dataset.parquet")
           
     # handle data
     data = pdata_func.filling_missing_value(data, "default_value")

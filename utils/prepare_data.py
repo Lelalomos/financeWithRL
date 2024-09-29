@@ -8,6 +8,7 @@ import os
 import yfinance as yf
 import traceback
 import torch
+from functions import cal_rsi, cal_storsi, cal_tema
 
 from functions import predict_nanvalue_lstm, return_candle_pattern, predict_nanvalue_lstm_vwma, predict_nanvalue_lstm_ichimoku, refill_missingvalue
 
@@ -25,7 +26,6 @@ class prepare_data:
                             tic, start=start_date, end=end_date, proxy=proxy, interval = interval
                         )
                     self.logging.info(f"download {tic} data from {engine_download}")
-                    
                 temp_df["tic"] = tic
                 if len(temp_df) > 0:
                     df_data = pd.concat([df_data, temp_df])
@@ -93,15 +93,20 @@ class prepare_data:
             data = return_candle_pattern(data)
             
         # convert tic to integer
-        list_tic_unique = list(data['tic'].unique())
-        map_tic = {}
-        for i,key in enumerate(list_tic_unique):
-            map_tic[key] = i
+        # list_tic_unique = list(data['tic'].unique())
+        # map_tic = {}
+        # for i,key in enumerate(list_tic_unique):
+        #     map_tic[key] = i
             
-        data['tic'] = data['tic'].replace(map_tic)
+        # data['tic'] = data['tic'].replace(map_tic)
         
         data.drop(["Date"],axis=1,inplace=True)
         return data
+    
+    def interpret_indicator():
+        cal_rsi()
+
+
     
     def filling_missing_value(self, data, predict_missing = "lstm", method_interpolate = None):
         data_preparing = data.copy()
