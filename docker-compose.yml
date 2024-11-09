@@ -1,0 +1,14 @@
+version: '3'
+services:
+  finance:
+    volumes:
+      - "./:/app" 
+    build:
+      context: .
+    image: test_gpu1:latest
+    tty: true
+    runtime: nvidia
+    environment:
+      - NVIDIA_DRIVER_CAPABILITIES=compute,video,utility
+      - NVIDIA_VISIBLE_DEVICES=all
+    

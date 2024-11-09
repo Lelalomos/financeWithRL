@@ -1,4 +1,4 @@
-apt update
+apt-get update
 yes | apt-get install gcc build-essential
 
 wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
@@ -19,7 +19,6 @@ if [[ `id -un` == "root" ]]
         make
         make install
 fi
-
 
 yes | pip install setuptools
 yes | pip install Ta-LIB
