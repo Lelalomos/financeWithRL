@@ -1,4 +1,5 @@
 from utils import return_logs, prepare_data
+from functions import return_candle_pattern
 import os
 import pandas as pd
 
@@ -15,31 +16,29 @@ def main():
     
     logging = return_logs(os.path.join(os.getcwd(),'logs','process.log'))
     
+    logging.info("pull data from yahoo")
     # pull data
     if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
         data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
     else:
-        # data = pdata_func.download_data(config.TICKET_LIST)
-        data = pdata_func.collect_data(True,True)
-        data.to_parquet("data/original_dataset.parquet")
-          
-    # handle data
-    data = pdata_func.filling_missing_value(data, "default_value")
-    print(data.head())
-    
+        # download data
+        data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
+        data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
 
 
-    
-    # train reinforcement learning
-    # logging.info("train reinforcement leaning")
-    # data = pd.read_csv(os.path.join(os.getcwd(),'dataset','train_test.csv'),index_col=0)
-    
-    
-    # model_rl = train_rl(dataset=data)
-    # model_rl.start()
-    
-    # 
-    
-    
+    logging.info("prepare data")
+    # clean data
+    data = pdata_func.pre_clean_data(data)
+    data = pdata_func.add_technical_indicator(data, config.INDICATOR_LIST)
+    data = return_candle_pattern(data)
+    data.drop(["Date"],axis=1,inplace=True)
+
+    print("data:")
+    print(data.columns)
+
+
+    del data
+
+
 if __name__ == "__main__":
     main()

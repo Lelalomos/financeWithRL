@@ -1,4 +1,3 @@
-from stockstats import StockDataFrame as Sdf
 import pandas as pd
 import numpy as np
 from scipy.stats import zscore
@@ -7,10 +6,9 @@ from utils.logger import return_logs
 import os
 import yfinance as yf
 import traceback
-import torch
-from functions import cal_rsi, cal_storsi, cal_tema
-
-from functions import predict_nanvalue_lstm, return_candle_pattern, predict_nanvalue_lstm_vwma, predict_nanvalue_lstm_ichimoku, refill_missingvalue
+import sys
+sys.path.append("/app")
+from stockstats.stockstats import StockDataFrame as Sdf
 
 class prepare_data:
     def __init__(self):
@@ -58,6 +56,7 @@ class prepare_data:
     
     def add_technical_indicator(self, dataframe, tech_indicator_list):
         self.logging.info(f"add technical indicator into dataframe process, tech_indicator_list:{tech_indicator_list}")
+        print(f"add technical indicator into dataframe process, tech_indicator_list:{tech_indicator_list}")
         df = dataframe.copy()
         df = df.sort_values(by=["Date","tic"])
         stock = Sdf.retype(df.copy())
@@ -67,14 +66,17 @@ class prepare_data:
             indicator_df = pd.DataFrame()
             for i in range(len(unique_ticker)):
                 try:
+                    print(f"tickle: {unique_ticker[i]}")
                     temp_indicator = stock[stock.tic == unique_ticker[i]][indicator]
                     temp_indicator = pd.DataFrame(temp_indicator)
+                    print("len df:",len(temp_indicator))
                     temp_indicator["tic"] = unique_ticker[i]
                     temp_indicator["Date"] = df[df.tic == unique_ticker[i]]["Date"].to_list()
                     indicator_df = pd.concat(
                         [indicator_df, temp_indicator], axis=0, ignore_index=True
                     )
                 except Exception as e:
+                    print(traceback.format_exc())
                     self.logging.error(f"error add indicator: {traceback.format_exc()}")
                     self.logging.error(f"error add indicator: {e}")
                     
@@ -84,83 +86,11 @@ class prepare_data:
         df = df.sort_values(by=["Date", "tic"])
         return df
     
-    def collect_data(self, add_indicator = True, add_candle = True):
-        data = self.download_data(config.TICKET_LIST, interval="1d")
-        data = self.pre_clean_data(data)
-        if add_indicator:
-            data = self.add_technical_indicator(data, config.INDICATOR_LIST)
-        if add_candle:
-            data = return_candle_pattern(data)
-            
-        # convert tic to integer
-        # list_tic_unique = list(data['tic'].unique())
-        # map_tic = {}
-        # for i,key in enumerate(list_tic_unique):
-        #     map_tic[key] = i
-            
-        # data['tic'] = data['tic'].replace(map_tic)
-        
-        data.drop(["Date"],axis=1,inplace=True)
-        return data
-    
-    def interpret_indicator():
-        cal_rsi()
-
-
-    
-    def filling_missing_value(self, data, predict_missing = "lstm", method_interpolate = None):
-        data_preparing = data.copy()
-        if predict_missing == "lstm":
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            # rsi pred
-            print("fill missing value in rsi")
-            rsi_model_path = os.path.join(os.getcwd(),'saved_model','rsi_14_model.pth')
-            data_preparing['rsi_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['rsi_14','Close']], 'rsi_14', rsi_model_path, device),axis=1)
-            
-            # # stochrsi pred
-            print("fill missing value in stochrsi")
-            stochrsi_model_path = os.path.join(os.getcwd(),'saved_model','stochrsi_14_model.pth')
-            data_preparing['stochrsi_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['stochrsi_14','Close']], "stochrsi_14", stochrsi_model_path, device),axis=1)
-            
-            # # tema pred
-            print("fill missing value in tema")
-            tema_model_path = os.path.join(os.getcwd(),'saved_model','tema_200_model.pth')
-            data_preparing['tema_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm(x[['tema_200','Close']], "tema_200", tema_model_path, device),axis=1)
-            
-            # vwma 
-            print("fill missing value in vwma")
-            vwma_model_path = os.path.join(os.getcwd(),'saved_model','vwma_14_model.pth')
-            data_preparing['vwma_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm_vwma(x[['vwma_14',"Close","Volume"]], "vwma_14", vwma_model_path, device),axis=1)
-            
-            # ichimoku
-            print("fill missing value in ichimoku")
-            ichimoku_model_path = os.path.join(os.getcwd(),'saved_model','ichimoku_model.pth')
-            data_preparing['ichimoku_pred'] = data_preparing.apply(lambda x :predict_nanvalue_lstm_ichimoku(x[['ichimoku',"High","Low","Close"]], "ichimoku", ichimoku_model_path, device),axis=1)
-        
-            print('data_preparing:')
-            print(data_preparing.columns)
-            # drop column 
-            data_preparing.drop(config.INDICATOR_LIST,axis = 1, inplace=True)
-        elif predict_missing == "default_value":
-            # fill missing value with default value
-            for indicators in config.INDICATOR_LIST:
-                data_preparing[indicators] = data_preparing.apply(lambda x :refill_missingvalue(x, indicators),axis=1)
-        elif predict_missing == "interpolate":
-            for indicators in config.INDICATOR_LIST:
-                if method_interpolate is None:
-                    data_preparing[indicators] = data_preparing[indicators].interpolate(method='linear')
-                else:
-                    data_preparing[indicators] = data_preparing[indicators].interpolate(method= method_interpolate)
-        elif predict_missing == "remove_nan":
-            for indicators in config.INDICATOR_LIST:
-                data_preparing = data_preparing.dropna(how='any')
-        
-        return data_preparing
     
 if __name__ == "__main__":
-    data_pipeline=prepare_data()
-    data = data_pipeline.collect_data()
+    data_pipeline = prepare_data()
+    path_data = data_pipeline.download_data(config.TICKET_LIST)
     
-    print(data)
+    # print(data)
     # data = data_pipeline.download_data(ticker_list = config.TICKET_LIST)
     # data = data_pipeline.start(save_file=False,data=data)
