@@ -29,9 +29,12 @@ def main():
     logging.info("prepare data")
     # clean data
     data = pdata_func.pre_clean_data(data)
-    data = pdata_func.add_technical_indicator(data, config.INDICATOR_LIST)
+    data = pdata_func.add_indicator(data, config.INDICATOR_LIST)
     data = return_candle_pattern(data)
-    data.drop(["Date"],axis=1,inplace=True)
+    data = data.fillna(0)
+    data.to_csv("data_final.csv")
+
+    # data.drop(["Date"],axis=1,inplace=True)
 
     print("data:")
     print(data.columns)

@@ -39,6 +39,9 @@ class prepare_data:
             df = df.drop(['Close'],axis = 1)
         if 'Adj Close' in df.columns:
             df = df.rename(columns={"Adj Close":"Close"})
+
+        # rename column to lower char
+        df = df.rename(columns=config.MAP_COLUMNS_NAME)
         return df
     
     def cal_zscore(self, list_data, threshold = 3):
@@ -53,6 +56,22 @@ class prepare_data:
         standardized_df = dataframe.apply(zscore)
         filtered_df = dataframe[(standardized_df < threshold) & (standardized_df > -threshold)].dropna()
         return filtered_df
+    
+    def add_indicator(self, dataframe, list_indicator):
+        self.logging.info(f"add technical indicator into dataframe process, tech_indicator_list:{list_indicator}")
+        print(f"add technical indicator into dataframe process, tech_indicator_list:{list_indicator}")
+        indicator_func = Sdf(dataframe)
+        list_tic = list(dataframe['tic'].unique())
+        df_all = pd.DataFrame(dtype=str)
+        for tic in list_tic:
+            split_tic_data = dataframe[dataframe['tic'] == tic]
+            for indicator in config.INDICATOR_LIST:
+                split_tic_data[indicator] = indicator_func[indicator]
+
+            df_all = pd.concat([df_all, split_tic_data],axis=0, ignore_index=True)
+
+        return df_all
+    
     
     def add_technical_indicator(self, dataframe, tech_indicator_list):
         self.logging.info(f"add technical indicator into dataframe process, tech_indicator_list:{tech_indicator_list}")

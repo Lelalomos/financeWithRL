@@ -41,5 +41,13 @@ SECTOR_GROUP = {
         "astros":["RTX","NOC"]
 }
 
-INDICATOR_LIST = ['rsi_14','stochrsi_14','vwma_14','tema_200', 'tema_50', 'tema_100']
+INDICATOR_LIST = ['rsi_14','stochrsi_14','vwma_14','ema_200', 'ema_50', 'ema_100', 'macd', 'ichimoku']
+
+MAP_COLUMNS_NAME = {
+    "Close":"close",
+    "High":"high",
+    "Low":"low",
+    "Open":"open",
+    "Volume":"volume"
+}
 

@@ -1,5 +1,6 @@
 from trainner import train_lstm4pred_singlefeature, train_lstm4pred_multifeature, train_rl
 from utils import prepare_data
+import config
 
 pdata = prepare_data()
 
@@ -9,8 +10,8 @@ def test_single_lstm():
 def test_multiple_lstm():
     train_lstm4pred_multifeature('vwma_14',["Close","Volume"], ['vwma_14'],10,10)
     
-def test_collect_data():
-    data = pdata.collect_data()
+def test_download_data():
+    data = pdata.download_data(config.TICKET_LIST)
     return data
 
 def test_fill_missing_predict(data):
@@ -23,12 +24,12 @@ def test_fill_missing(data):
 
 if __name__ == "__main__":
     # test_single_lstm()
-    test_multiple_lstm()
+    # test_multiple_lstm()
     # test_multiple_lstm
     # test_prepare_data()
     # train_rl()
     
-    # data = test_collect_data()
+    data = test_download_data()
     # data = test_fill_missing_predict(data)
-    # print(data)
+    print(data)
     
