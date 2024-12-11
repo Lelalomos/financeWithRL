@@ -6,6 +6,7 @@ from utils.logger import return_logs
 import os
 import yfinance as yf
 import traceback
+from functions import cal_rsi, cal_storsi, cal_ema
 import sys
 sys.path.append("/app")
 from stockstats.stockstats import StockDataFrame as Sdf
@@ -68,42 +69,41 @@ class prepare_data:
             for indicator in config.INDICATOR_LIST:
                 split_tic_data[indicator] = indicator_func[indicator]
 
+            split_tic_data[indicator] = split_tic_data[indicator]
+
             df_all = pd.concat([df_all, split_tic_data],axis=0, ignore_index=True)
 
         return df_all
     
-    
-    def add_technical_indicator(self, dataframe, tech_indicator_list):
-        self.logging.info(f"add technical indicator into dataframe process, tech_indicator_list:{tech_indicator_list}")
-        print(f"add technical indicator into dataframe process, tech_indicator_list:{tech_indicator_list}")
-        df = dataframe.copy()
-        df = df.sort_values(by=["Date","tic"])
-        stock = Sdf.retype(df.copy())
-        unique_ticker = stock.tic.unique()
+    def sep_datetime(self, dataframe):
+        dataframe['Date'] = pd.to_datetime(dataframe['Date'])
+        dataframe['month'] = dataframe['Date'].dt.month
+        dataframe['day'] = dataframe['Date'].dt.day
 
-        for indicator in tech_indicator_list:
-            indicator_df = pd.DataFrame()
-            for i in range(len(unique_ticker)):
-                try:
-                    print(f"tickle: {unique_ticker[i]}")
-                    temp_indicator = stock[stock.tic == unique_ticker[i]][indicator]
-                    temp_indicator = pd.DataFrame(temp_indicator)
-                    print("len df:",len(temp_indicator))
-                    temp_indicator["tic"] = unique_ticker[i]
-                    temp_indicator["Date"] = df[df.tic == unique_ticker[i]]["Date"].to_list()
-                    indicator_df = pd.concat(
-                        [indicator_df, temp_indicator], axis=0, ignore_index=True
-                    )
-                except Exception as e:
-                    print(traceback.format_exc())
-                    self.logging.error(f"error add indicator: {traceback.format_exc()}")
-                    self.logging.error(f"error add indicator: {e}")
-                    
-            df = df.merge(
-                indicator_df[["tic", "Date", indicator]], on=["tic", "Date"], how="left"
-            )
-        df = df.sort_values(by=["Date", "tic"])
-        return df
+        return dataframe
+    
+    def interpret_indicator(self, dataframe):
+        # rsi
+        dataframe['rsi_14'] = dataframe['rsi_14']/100
+        dataframe['rsi_interpret'] = dataframe['rsi_14'].apply(cal_rsi)
+
+        dataframe['stochrsi_14'] = dataframe['stochrsi_14']/100
+        dataframe['stochrsi_14_interpret'] = dataframe['stochrsi_14'].apply(cal_storsi)
+
+        dataframe['ema_50100'] = dataframe.apply(cal_ema,args=(50,100),axis=1)
+        dataframe['ema_100200'] = dataframe.apply(cal_ema,args=(100,200),axis=1)
+        dataframe['ema_50200'] = dataframe.apply(cal_ema,args=(50,200),axis=1)
+
+        # normalize volumns
+        df_all = pd.DataFrame(dtype=str)
+        list_tic = list(dataframe['tic'].unique())
+        for tic in list_tic:
+            split_tic_data = dataframe[dataframe['tic'] == tic]
+            split_tic_data = (split_tic_data['volume'] - split_tic_data['volume'].min()) / (split_tic_data['volume'].max() - split_tic_data['volume'].min())
+            df_all = pd.concat([df_all, split_tic_data],axis=0, ignore_index=True)
+
+        return df_all
+
     
     
 if __name__ == "__main__":

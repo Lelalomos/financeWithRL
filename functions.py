@@ -2,11 +2,9 @@ from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 import torch
 from model import  LSTMModel
-import torch.nn as nn
-import matplotlib.pyplot as plt
-import os
 import pandas as pd
 import talib
+import config
 
 def search_null_value(df):
     columns_with_null = df.columns[df.isnull().any()]
@@ -198,25 +196,33 @@ def return_candle_pattern(data):
 # calculate indicator
 def cal_rsi(value):
     value = float(value)
-    if value >= 0.7:
+    if value >= config.RSI_UP:
         return 1
-    elif value <= 0.3:
+    elif value <= config.RSI_DOWN:
         return -1
     else:
         return 0
     
 def cal_storsi(value):
     value = float(value)
-    if value >= 0.8:
+    if value >= config.STORSI_UP:
         return 1
-    elif value <= 0.2:
+    elif value <= config.STORSI_DOWN:
         return -1
     else:
         return 0
     
-def cal_tema(value, min_tema, max_tema):
-    tema_min = value[f'tema_{min_tema}']
-    tema_max = value[f'tema_{max_tema}']
+def cal_ichimoku(value):
+    if value > config.ICHIMOKU_UP:
+        return 1
+    elif value < config.ICHIMOKU_DOWN:
+        return -1
+    else:
+        return 0
+    
+def cal_ema(value, min_tema, max_tema):
+    tema_min = value[f'ema_{min_tema}']
+    tema_max = value[f'ema_{max_tema}']
     tema_min = float(tema_min)
     tema_max = float(tema_max)
     if tema_min > tema_max:

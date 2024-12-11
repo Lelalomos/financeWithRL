@@ -4,7 +4,7 @@ TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","
         "CLSK","BAC","AMC","UNH","UBER","COST","PFE","CRWD","OXY","WMT","LLY","MCD","DELL","SNOW","SOFI","ASML","V","CELH","HIMS"
         "JNJ","PG","ENPH","PEP","MA","ABBV","GRAB","KO","PDD","TMDX","ARM","MU","JPM", "PANW","CHWY","F","JD","MRNA","CVX","RBLX","MRK",
         "RDDT","BIDU","RTX","PINS","WBD","HSY","HPE","TM","GTLB","NOC","BILI","MDLZ","K","WIX","MSI","NVO","PVH","CDNA","BOX","ANF","AMBA",
-        "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA"]
+        "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA", "RGTI"]
 
 # test
 # TICKET_LIST = ["AAPL","TSLA","NFLX"]
@@ -19,7 +19,7 @@ SECTOR_GROUP = {
         "community":["META","GOOGL","ZM","RDDT","MSI"],
         "entertain":["NFLX","AMZN","DIS","AMC","BIDU","WBD","BILI"],
         "cloud":["AMZN","GOOGL","DBX","CFLT","ORCL","IBM","CLSK","SNOW"],
-        "chip":["ON","AAPL","NVDA","AVGO","QCOM","AMD","TSM","SMCI","INTC","ASML","ARM","SNPS"],
+        "chip":["ON","AAPL","NVDA","AVGO","QCOM","AMD","TSM","SMCI","INTC","ASML","ARM","SNPS","RGTI"],
         "industries":["FN"],
         "hardware":["LOGI","AMZN","MSFT","WDC","HPQ","INTC","AAPL","NVDA","AMD","DELL","MU","HPE","MSI"],
         "auto":["TSLA","LI","NIU","RACE","F","TM"],
@@ -50,4 +50,15 @@ MAP_COLUMNS_NAME = {
     "Open":"open",
     "Volume":"volume"
 }
+
+# config indicator
+RSI_UP = 0.7
+RSI_DOWN = 0.3
+STORSI_UP = 0.8
+STORSI_DOWN = 0.2
+ICHIMOKU_UP = 1
+ICHIMOKU_DOWN = 0.5
+
+# end year for get data
+YEAR_END = 5
 
