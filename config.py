@@ -1,13 +1,13 @@
-TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","PYPL","CSCO","ADBE","INTU",
-        "LI","NEE","ON","NIU","ZM","MMM","DUOL","COIN","AVGO","ABNB","QCOM","LOGI","WDC","DBX","CFLT","AMD","ORCL","CRM","MDB","EBAY",
-        "IBM","BABA","SE","U","SPOT","WAL","RACE","ACN","HPQ","TSM","SBUX","NKE","XOM","DIS","BA","PLTR","SMCI","MSTR","INTC",
-        "CLSK","BAC","AMC","UNH","UBER","COST","PFE","CRWD","OXY","WMT","LLY","MCD","DELL","SNOW","SOFI","ASML","V","CELH","HIMS"
-        "JNJ","PG","ENPH","PEP","MA","ABBV","GRAB","KO","PDD","TMDX","ARM","MU","JPM", "PANW","CHWY","F","JD","MRNA","CVX","RBLX","MRK",
-        "RDDT","BIDU","RTX","PINS","WBD","HSY","HPE","TM","GTLB","NOC","BILI","MDLZ","K","WIX","MSI","NVO","PVH","CDNA","BOX","ANF","AMBA",
-        "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA", "RGTI"]
+# TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","PYPL","CSCO","ADBE","INTU",
+#         "LI","NEE","ON","NIU","ZM","MMM","DUOL","COIN","AVGO","ABNB","QCOM","LOGI","WDC","DBX","CFLT","AMD","ORCL","CRM","MDB","EBAY",
+#         "IBM","BABA","SE","U","SPOT","WAL","RACE","ACN","HPQ","TSM","SBUX","NKE","XOM","DIS","BA","PLTR","SMCI","MSTR","INTC",
+#         "CLSK","BAC","AMC","UNH","UBER","COST","PFE","CRWD","OXY","WMT","LLY","MCD","DELL","SNOW","SOFI","ASML","V","CELH","HIMS"
+#         "JNJ","PG","ENPH","PEP","MA","ABBV","GRAB","KO","PDD","TMDX","ARM","MU","JPM", "PANW","CHWY","F","JD","MRNA","CVX","RBLX","MRK",
+#         "RDDT","BIDU","RTX","PINS","WBD","HSY","HPE","TM","GTLB","NOC","BILI","MDLZ","K","WIX","MSI","NVO","PVH","CDNA","BOX","ANF","AMBA",
+#         "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA", "RGTI"]
 
 # test
-# TICKET_LIST = ["AAPL","TSLA","NFLX"]
+TICKET_LIST = ["AAPL","TSLA","NFLX"]
 
 # ADI
 SECTOR_GROUP = {
@@ -41,7 +41,8 @@ SECTOR_GROUP = {
         "astros":["RTX","NOC"]
 }
 
-INDICATOR_LIST = ['rsi_14','stochrsi_14','vwma_14','ema_200', 'ema_50', 'ema_100', 'macd', 'ichimoku']
+INDICATOR_LIST = ['rsi_14','stochrsi_14','vwma_20','ema_200', 'ema_50', 'ema_100', 'macd', 'ichimoku']
+
 
 MAP_COLUMNS_NAME = {
     "Close":"close",
@@ -49,6 +50,33 @@ MAP_COLUMNS_NAME = {
     "Low":"low",
     "Open":"open",
     "Volume":"volume"
+}
+MAP_SECTOR_STOCK = {'software': 1,
+  'security': 2,
+  'ecommerce': 3,
+  'community': 4,
+  'entertain': 5,
+  'cloud': 6,
+  'chip': 7,
+  'industries': 8,
+  'hardware': 9,
+  'auto': 10,
+  'bio': 11,
+  'finance': 12,
+  'network': 13,
+  'energy': 14,
+  'utility': 15,
+  'phone': 16,
+  'study': 17,
+  'delivery': 18,
+  'crypto': 19,
+  'rent': 20,
+  'food': 21,
+  'pet': 22,
+  'aircraft': 23,
+  'game': 24,
+  'health': 25,
+  'astros': 26
 }
 
 # config indicator
@@ -61,4 +89,5 @@ ICHIMOKU_DOWN = 0.5
 
 # end year for get data
 YEAR_END = 5
+
 

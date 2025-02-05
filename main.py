@@ -1,14 +1,16 @@
-from utils import return_logs, prepare_data
-from functions import return_candle_pattern
+from utils import return_logs, prepare_data, normalization_data
+from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema
 import os
 import pandas as pd
 from datetime import datetime, timedelta
+import numpy as np
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 import config
 
 pdata_func = prepare_data()
+norm_func = normalization_data()
 
 def main():
     os.makedirs(os.path.join(os.getcwd(),'logs'),exist_ok=True)
@@ -38,7 +40,42 @@ def main():
     data = data.fillna(0)
     data = data.sort_values(by=["Date", "tic"])
     data.drop(['Date'], inplace=True, axis=1)
-    data.to_csv("data_final.csv")
+    # grouping sector in stock
+    group_sector = groupping_stock(data, config)
+
+    # interpreter data
+    group_sector['stochrsi_14'] = group_sector['stochrsi_14']/100
+    group_sector['stochrsi_14_decision'] = group_sector['stochrsi_14'].apply(cal_storsi)
+
+    group_sector['rsi_14'] = group_sector['rsi_14']/100
+    group_sector['rsi_14_decision'] = group_sector['rsi_14'].apply(cal_rsi)
+
+    group_sector['ichimoku_decision'] = group_sector['ichimoku'].apply(cal_ichimoku)
+
+    group_sector['ema_50100'] = group_sector.apply(cal_ema,50,100)
+    group_sector['ema_50200'] = group_sector.apply(cal_ema,50,200)
+    group_sector['ema_50200'] = group_sector.apply(cal_ema,100,200)
+
+    # column Outliers
+    outliers_column = ['close','high','low','open','volume','vwma_14','ema_200','ema_50','ema_100','macd','ichimoku']
+    # df_outlier = group_sector[outliers_column]
+    group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
+    
+
+    # take log transformation with outliers column
+    # for out_column in outliers_column:
+    #     df_outlier[f'log_{out_column}'] = np.where(df_outlier[out_column] > 0, np.log(df_outlier[out_column]), np.log(df_outlier[out_column] + 1))
+
+    # standardization 
+
+
+
+
+
+    
+
+    
+    # data.to_csv("data_final.csv")
 
     # data.drop(["Date"],axis=1,inplace=True)
 
@@ -47,6 +84,7 @@ def main():
 
 
     del data
+
 
 
 if __name__ == "__main__":

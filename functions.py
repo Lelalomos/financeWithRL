@@ -192,7 +192,23 @@ def return_candle_pattern(data):
     data['CDLXSIDEGAP3METHODS'] = talib.CDLXSIDEGAP3METHODS(data['open'], data['high'], data['low'], data['close'])
     
     return data
-    
+
+def groupping_stock(data, config):
+    u_tic = list(data['tic'].unique())
+    sector_stock = list(config.SECTOR_GROUP.keys())
+    dict_map_sector = {sector:i for i,sector in enumerate(sector_stock,1)}
+    df_all = pd.DataFrame(dtype = str)
+    for tic in u_tic:
+        for group in config.SECTOR_GROUP:
+            if tic in config.SECTOR_GROUP[group]:
+                df_temp = data[data['tic'] == tic]
+                map_name = dict_map_sector[group]
+                df_temp['group'] = map_name
+                df_all = pd.concat([df_all, df_temp])
+
+    return df_all
+
+        
 # calculate indicator
 def cal_rsi(value):
     value = float(value)
