@@ -52,15 +52,17 @@ def main():
 
     group_sector['ichimoku_decision'] = group_sector['ichimoku'].apply(cal_ichimoku)
 
-    group_sector['ema_50100'] = group_sector.apply(cal_ema,50,100)
-    group_sector['ema_50200'] = group_sector.apply(cal_ema,50,200)
-    group_sector['ema_50200'] = group_sector.apply(cal_ema,100,200)
+    print(group_sector.columns)
+
+    group_sector['ema_50100'] = group_sector.apply(cal_ema,args=(50,100),axis=1)
+    group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(50,200),axis=1)
+    group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(100,200),axis=1)
 
     # column Outliers
-    outliers_column = ['close','high','low','open','volume','vwma_14','ema_200','ema_50','ema_100','macd','ichimoku']
+    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku']
     # df_outlier = group_sector[outliers_column]
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
-    
+    group_sector.to_csv("test_dataset.csv")
 
     # take log transformation with outliers column
     # for out_column in outliers_column:

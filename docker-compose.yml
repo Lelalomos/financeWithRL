@@ -5,7 +5,8 @@ services:
       - "./:/app" 
     build:
       context: .
-    image: test_gpu1:latest
+    image: test_talib:latest
+    restart: always
     tty: true
     runtime: nvidia
     environment:

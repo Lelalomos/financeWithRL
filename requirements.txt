@@ -1,7 +1,7 @@
 gymnasium
 yfinance==0.2.47
 scikit-learn
-pandas
+pandas==2.0
 torch
 openpyxl
 stable_baselines3
