@@ -1,5 +1,5 @@
 from utils import return_logs, prepare_data, normalization_data
-from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema
+from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int
 import os
 import pandas as pd
 from datetime import datetime, timedelta
@@ -39,9 +39,14 @@ def main():
     data = return_candle_pattern(data)
     data = data.fillna(0)
     data = data.sort_values(by=["Date", "tic"])
+    # separate date
+    data['Date'] = pd.to_datetime(data['Date'])
+    data['day'] = data['Date'].dt.day
+    data['month'] = data['Date'].dt.month
     data.drop(['Date'], inplace=True, axis=1)
     # grouping sector in stock
     group_sector = groupping_stock(data, config)
+    group_sector = convert_string2int(group_sector)
 
     # interpreter data
     group_sector['stochrsi_14'] = group_sector['stochrsi_14']/100

@@ -1,4 +1,5 @@
 from torch.utils.data import TensorDataset, DataLoader
+from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import torch
 from model import  LSTMModel
@@ -195,19 +196,22 @@ def return_candle_pattern(data):
 
 def groupping_stock(data, config):
     u_tic = list(data['tic'].unique())
-    sector_stock = list(config.SECTOR_GROUP.keys())
-    dict_map_sector = {sector:i for i,sector in enumerate(sector_stock,1)}
     df_all = pd.DataFrame(dtype = str)
     for tic in u_tic:
         for group in config.SECTOR_GROUP:
             if tic in config.SECTOR_GROUP[group]:
                 df_temp = data[data['tic'] == tic]
-                map_name = dict_map_sector[group]
-                df_temp['group'] = map_name
+                df_temp['group'] = group
                 df_all = pd.concat([df_all, df_temp])
 
     return df_all
 
+def convert_string2int(data, list_column=['group']):
+    stock_encoder = LabelEncoder()
+    for column in list_column:
+        data[f"{column}_id"] = stock_encoder.fit_transform(data[column])
+    data = data.drop(columns=list_column,axis =1)
+    return data
         
 # calculate indicator
 def cal_rsi(value):

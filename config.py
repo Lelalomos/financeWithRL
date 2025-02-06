@@ -51,33 +51,6 @@ MAP_COLUMNS_NAME = {
     "Open":"open",
     "Volume":"volume"
 }
-MAP_SECTOR_STOCK = {'software': 1,
-  'security': 2,
-  'ecommerce': 3,
-  'community': 4,
-  'entertain': 5,
-  'cloud': 6,
-  'chip': 7,
-  'industries': 8,
-  'hardware': 9,
-  'auto': 10,
-  'bio': 11,
-  'finance': 12,
-  'network': 13,
-  'energy': 14,
-  'utility': 15,
-  'phone': 16,
-  'study': 17,
-  'delivery': 18,
-  'crypto': 19,
-  'rent': 20,
-  'food': 21,
-  'pet': 22,
-  'aircraft': 23,
-  'game': 24,
-  'health': 25,
-  'astros': 26
-}
 
 # config indicator
 RSI_UP = 0.7
