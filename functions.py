@@ -6,6 +6,7 @@ from model import  LSTMModel
 import pandas as pd
 import talib
 import config
+from pipe import dedup
 
 def search_null_value(df):
     columns_with_null = df.columns[df.isnull().any()]
@@ -251,3 +252,20 @@ def cal_ema(value, min_tema, max_tema):
         return -1
     else:
         return 0
+    
+
+def split_dataset(df):
+    list_year = df['year'].to_list()
+    list_year = list(list_year|dedup)
+
+    # split train_set, validate_set, test_set
+    train_set = list_year[:-5]
+    validate_set = list_year[-5:-3]
+    test_set = list_year[-3:-1]
+
+    df['year'] = df['year'].astype(int)
+    df_train_set = df[(df['year']>=train_set[0]) & (df['year']<=train_set[-1])]
+    df_validate_set = df[(df['year']>=validate_set[0]) & (df['year']<=validate_set[-1])]
+    df_test_set = df[(df['year']>=test_set[0]) & (df['year']<=test_set[-1])]
+
+    return df_train_set, df_validate_set, df_test_set

@@ -2,8 +2,6 @@ from utils import return_logs, prepare_data, normalization_data
 from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int
 import os
 import pandas as pd
-from datetime import datetime, timedelta
-import numpy as np
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -18,9 +16,6 @@ def main():
     os.makedirs(os.path.join(os.getcwd(),'saved_model'),exist_ok=True)
     
     logging = return_logs(os.path.join(os.getcwd(),'logs','process.log'))
-
-    end_date = datetime.now()  # วันที่ปัจจุบัน
-    start_date = end_date - timedelta(days=config.YEAR_END*365)  # ย้อนหลัง 5 ปี
     
     logging.info("pull data from yahoo")
     # pull data
@@ -28,9 +23,8 @@ def main():
         data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
     else:
         # download data
-        data = pdata_func.download_data(config.TICKET_LIST, interval="1d", start_date= start_date, end_date=end_date)
+        data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
         data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
-
 
     logging.info("prepare data")
     # clean data
@@ -38,11 +32,12 @@ def main():
     data = pdata_func.add_indicator(data, config.INDICATOR_LIST)
     data = return_candle_pattern(data)
     data = data.fillna(0)
-    data = data.sort_values(by=["Date", "tic"])
     # separate date
     data['Date'] = pd.to_datetime(data['Date'])
     data['day'] = data['Date'].dt.day
     data['month'] = data['Date'].dt.month
+    data['year'] = data['Date'].dt.year
+    data = data.sort_values(by=["Date", "tic"])
     data.drop(['Date'], inplace=True, axis=1)
     # grouping sector in stock
     group_sector = groupping_stock(data, config)
@@ -68,30 +63,7 @@ def main():
     # df_outlier = group_sector[outliers_column]
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
     group_sector.to_csv("test_dataset.csv")
-
-    # take log transformation with outliers column
-    # for out_column in outliers_column:
-    #     df_outlier[f'log_{out_column}'] = np.where(df_outlier[out_column] > 0, np.log(df_outlier[out_column]), np.log(df_outlier[out_column] + 1))
-
-    # standardization 
-
-
-
-
-
-    
-
-    
-    # data.to_csv("data_final.csv")
-
-    # data.drop(["Date"],axis=1,inplace=True)
-
-    print("data:")
-    print(data.columns)
-
-
-    del data
-
+    # split train, validate, test
 
 
 if __name__ == "__main__":
