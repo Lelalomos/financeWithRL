@@ -1,6 +1,7 @@
+pipe
 gymnasium
 yfinance==0.2.47
-scikit-learn
+scikit-learn==1.5.2
 pandas==2.0
 torch
 openpyxl
@@ -8,4 +9,4 @@ stable_baselines3
 pyarrow
 seaborn
 numpy==1.26.4
-pipe
+
