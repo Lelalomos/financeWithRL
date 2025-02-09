@@ -62,6 +62,7 @@ def main():
     outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku']
     # df_outlier = group_sector[outliers_column]
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
+    # ต้องเพิ่ม label ว่าต้องการแบบไหน
     group_sector.to_csv("test_dataset.csv")
     # split train, validate, test
 

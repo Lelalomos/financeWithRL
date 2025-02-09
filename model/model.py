@@ -132,7 +132,8 @@ class LSTMModel_HYPER(nn.Module):
                  second_layer_hidden_size,
                  second_layer_size,
                  third_layer_hidden_size,
-                 third_layer_size):
+                 third_layer_size,
+                 dropout_value):
         super(LSTMModel, self).__init__()
 
         self.stock_embedding = nn.Embedding(num_stocks, embedding_dim_stock)
@@ -146,7 +147,7 @@ class LSTMModel_HYPER(nn.Module):
         self.lstm2 = nn.LSTM(first_layer_hidden_size, second_layer_hidden_size, second_layer_size, batch_first=True)
         self.layer_norm = nn.LayerNorm(hidden_size_norm)
         self.lstm3 = nn.LSTM(second_layer_hidden_size, third_layer_hidden_size, third_layer_size, batch_first=True)
-        self.dropout = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(dropout_value)
         self.fc = nn.Linear(third_layer_hidden_size, output_size)
 
     def forward(self, stock_name, group_name, day_name, month_name, feature):

@@ -207,7 +207,7 @@ def groupping_stock(data, config):
 
     return df_all
 
-def convert_string2int(data, list_column=['group']):
+def convert_string2int(data, list_column=['group','tic']):
     stock_encoder = LabelEncoder()
     for column in list_column:
         data[f"{column}_id"] = stock_encoder.fit_transform(data[column])
