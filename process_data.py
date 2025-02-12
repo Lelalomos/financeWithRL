@@ -2,6 +2,7 @@ from utils import return_logs, prepare_data, normalization_data
 from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int
 import os
 import pandas as pd
+import numpy as np
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -39,6 +40,12 @@ def main():
     data['year'] = data['Date'].dt.year
     data = data.sort_values(by=["Date", "tic"])
     data.drop(['Date'], inplace=True, axis=1)
+
+    # make label
+    data["pre_7"] = data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
+    data["pre_7"] = np.tanh(data["pre_7"] / 100) * 100
+    data["pre_7"] = data["pre_7"].fillna(method="bfill", limit=7)
+
     # grouping sector in stock
     group_sector = groupping_stock(data, config)
     group_sector = convert_string2int(group_sector)

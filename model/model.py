@@ -164,4 +164,4 @@ class LSTMModel_HYPER(nn.Module):
         lstm_out3, _ = self.lstm3(lstm_out22)
         out1 = self.dropout(lstm_out3[:, -1, :])
         fc_out = self.fc(out1)
-        return fc_out
+        return torch.tanh(fc_out)
