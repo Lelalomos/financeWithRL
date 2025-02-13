@@ -3,9 +3,12 @@ import torch
 import torch.nn as nn
 from model.model import LSTMModel_HYPER
 from torch.utils.data import DataLoader, TensorDataset
+import pandas as pd
+import os
 
 # กำหนดฟังก์ชัน objective (เป้าหมายของการหาค่าที่ดีที่สุด)
-def objective(trial, df_validate_set):
+def objective(trial):
+    df_validate_set = pd.read_parquet(os.path.join(os.getcwd(),'data','validate_dataset.parquet'))
 
     num_stocks = len(df_validate_set['tic'].unique())
     num_group = len(df_validate_set['group_id'].unique())

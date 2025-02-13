@@ -1,5 +1,5 @@
 from utils import return_logs, prepare_data, normalization_data
-from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int
+from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int, split_dataset
 import os
 import pandas as pd
 import numpy as np
@@ -20,12 +20,12 @@ def main():
     
     logging.info("pull data from yahoo")
     # pull data
-    if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
-        data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
-    else:
-        # download data
-        data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
-        data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
+    # if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
+    #     data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
+    # else:
+    # download data
+    data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
+    data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
 
     logging.info("prepare data")
     # clean data
@@ -69,9 +69,18 @@ def main():
     outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku']
     # df_outlier = group_sector[outliers_column]
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
+    
     # ต้องเพิ่ม label ว่าต้องการแบบไหน
-    group_sector.to_csv("test_dataset.csv")
     # split train, validate, test
+    train_set, validate_set, test_set = split_dataset(group_sector)
+
+    validate_set = validate_set.drop(["year"],axis=1)
+    test_set = test_set.drop(["year"],axis=1)
+    train_set = train_set.drop(["year"],axis=1)
+
+    validate_set.to_parquet(os.path.join(os.getcwd(),"data","validate_dataset.parquet"))
+    test_set.to_parquet(os.path.join(os.getcwd(),"data","test_dataset.parquet"))
+    train_set.to_parquet(os.path.join(os.getcwd(),"data","train_dataset.parquet"))
 
 
 if __name__ == "__main__":
