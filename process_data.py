@@ -31,6 +31,7 @@ def main():
     # clean data
     data = pdata_func.pre_clean_data(data)
     data = pdata_func.add_indicator(data, config.INDICATOR_LIST)
+
     data = return_candle_pattern(data)
     data = data.fillna(0)
     # separate date
@@ -59,16 +60,17 @@ def main():
 
     group_sector['ichimoku_decision'] = group_sector['ichimoku'].apply(cal_ichimoku)
 
-    print(group_sector.columns)
-
     group_sector['ema_50100'] = group_sector.apply(cal_ema,args=(50,100),axis=1)
     group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(50,200),axis=1)
     group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(100,200),axis=1)
 
     # column Outliers
     outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku']
+
     # df_outlier = group_sector[outliers_column]
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
+    group_sector['ichimoku'] = group_sector['ichimoku'].fillna(-1)
+    group_sector['macd'] = group_sector['macd'].fillna(-1)
     
     # ต้องเพิ่ม label ว่าต้องการแบบไหน
     # split train, validate, test

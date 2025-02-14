@@ -9,4 +9,5 @@ stable_baselines3
 pyarrow
 seaborn
 numpy==1.26.4
+optuna
 

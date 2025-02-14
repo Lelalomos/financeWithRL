@@ -1,5 +1,5 @@
 from gymnasium.envs.registration import register
-from model.model import trading_env, LSTMModel
+from model.model import trading_env, LSTMModel, LSTMModel_HYPER
 
 # regis rl model
 register(
