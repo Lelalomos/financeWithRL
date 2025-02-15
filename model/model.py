@@ -93,8 +93,6 @@ class LSTMModel(nn.Module):
     def __init__(self, input_size=1, output_size=1):
         super(LSTMModel, self).__init__()
 
-
-        
         self.lstm1 = nn.LSTM(input_size, 32, 3, batch_first=True)
         self.dropout = nn.Dropout(0.1)
         self.lstm21 = nn.LSTM(32, 64, 3, batch_first=True)
@@ -146,11 +144,13 @@ class LSTMModel_HYPER(nn.Module):
         self.month_embedding = nn.Embedding(num_month, embedding_dim_month)
 
         input_dim = embedding_dim_stock + embedding_dim_group + embedding_dim_day+ embedding_dim_month+ feature_dim
+        self.batch_norm_input = nn.BatchNorm1d(input_dim)
         self.lstm1 = nn.LSTM(input_dim, first_layer_hidden_size, first_layer_size, batch_first=True)
         self.lstm2 = nn.LSTM(first_layer_hidden_size, second_layer_hidden_size, second_layer_size, batch_first=True)
-        self.layer_norm = nn.LayerNorm(feature_dim)
+        print("input_dim:",input_dim)
         self.lstm3 = nn.LSTM(second_layer_hidden_size, third_layer_hidden_size, third_layer_size, batch_first=True)
         self.dropout = nn.Dropout(dropout_value)
+        # self.batch_norm_hidden = nn.BatchNorm1d(second_layer_hidden_size)
         self.fc = nn.Linear(third_layer_hidden_size, output_size)
         # print('finish init')
 
@@ -163,16 +163,11 @@ class LSTMModel_HYPER(nn.Module):
         
         # print('concat')
         combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=1)
-        # print('combind_input',len(combind_input))
-        out, _ = self.lstm1(combind_input)
-        # print('out',len(out))
+        input_norm = self.batch_norm_input(combind_input)
+        out, _ = self.lstm1(input_norm)
         lstm_out21, _ = self.lstm2(out)
-        # lstm_out22, _ = self.layer_norm(lstm_out21)
-        # print('lstm_out22',len(lstm_out22))
         lstm_out3, _ = self.lstm3(lstm_out21)
-        # print("lstm_out3:",lstm_out3)
         out1 = self.dropout(lstm_out3)
-        # print("dropout:",out1)
         fc_out = self.fc(out1)
         # print("fc_out:",fc_out)
         return torch.tanh(fc_out)

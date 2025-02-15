@@ -101,6 +101,11 @@ if __name__ == "__main__":
     study = optuna.create_study(direction="minimize", pruner=optuna.pruners.MedianPruner(n_warmup_steps=10))
     study.optimize(objective, n_trials=300)  # ทดลอง 20 รอบ
 
+    history_df = study.trials_dataframe()
+
+    # สามารถบันทึก DataFrame ลงไฟล์ CSV ได้
+    history_df.to_csv('optimization_history.csv', index=False)
+
     # แสดงค่า Hyperparameter ที่ดีที่สุด
     print("Best Hyperparameters:", study.best_params)
     print("Best Trial:", study.best_trial.number)
@@ -108,5 +113,11 @@ if __name__ == "__main__":
     print("Best Loss:", study.best_trial.value)  # ค่านี้ต้องต่ำที่สุด
 
     '''
+    0.7
     {'output_size': 220, 'embedding_dim_stock': 12, 'embedding_dim_group': 8, 'embedding_dim_day': 46, 'embedding_dim_month': 31, 'first_layer_hidden_size': 107, 'first_layer_size': 4, 'second_layer_hidden_size': 304, 'second_layer_size': 1, 'third_layer_hidden_size': 165, 'third_layer_size': 4, 'dropout': 0.312948360649174, 'delta': 0.10003407111863402}
+    
+    Best Hyperparameters: {'output_size': 139, 'embedding_dim_stock': 49, 'embedding_dim_group': 15, 'embedding_dim_day': 38, 'embedding_dim_month': 35, 'first_layer_hidden_size': 186, 'first_layer_size': 2, 'second_layer_hidden_size': 405, 'second_layer_size': 5, 'third_layer_hidden_size': 202, 'third_layer_size': 1, 'dropout': 0.16918304089580144, 'delta': 0.10013449995372502}
+    Best Trial: 183
+    Best Parameters: {'output_size': 139, 'embedding_dim_stock': 49, 'embedding_dim_group': 15, 'embedding_dim_day': 38, 'embedding_dim_month': 35, 'first_layer_hidden_size': 186, 'first_layer_size': 2, 'second_layer_hidden_size': 405, 'second_layer_size': 5, 'third_layer_hidden_size': 202, 'third_layer_size': 1, 'dropout': 0.16918304089580144, 'delta': 0.10013449995372502}
+    Best Loss: 0.7113943099975586
     '''
