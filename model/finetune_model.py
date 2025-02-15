@@ -21,14 +21,16 @@ def objective(trial):
     list_except_group = [columns for columns in list_except_group if columns not in ['pre_7']]
     X_val = feature[list_except_group]
     feature_dim = len(X_val.columns)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("device:",device)
 
     # convert to tensor
     stock_tensor = torch.tensor(df_validate_set['tic_id'].astype(int).to_list(), dtype=torch.long)
     group_tensor = torch.tensor(df_validate_set['group_id'].astype(int).to_list(), dtype=torch.long)
     month_tensor = torch.tensor(df_validate_set['month'].astype(int).to_list(), dtype=torch.long)
     day_tensor = torch.tensor(df_validate_set['day'].astype(int).to_list(), dtype=torch.long)
-    feature_data = torch.tensor(X_val.to_numpy(), dtype=torch.float32)
-    feature_label = torch.tensor(np.array(y_val.values), dtype=torch.float32)
+    feature_data = torch.tensor(X_val.to_numpy(), dtype=torch.float32).to(device)
+    feature_label = torch.tensor(np.array(y_val.values), dtype=torch.float32).to(device)
 
     batch_size = 64
     epochs = 10
@@ -68,7 +70,7 @@ def objective(trial):
                             second_layer_size,
                             third_layer_hidden_size,
                             third_layer_size,
-                            dropout)
+                            dropout).to(device)
     
 
     criterion = nn.HuberLoss(delta=delta_params)
@@ -77,6 +79,7 @@ def objective(trial):
         val_loss = 0
         for batch_X, stock_tensor, group_tensor, month_tensor, day_tensor, batch_y in val_loader:
             optimizer.zero_grad()
+            batch_X, stock_tensor, group_tensor, month_tensor, day_tensor, batch_y = batch_X.to(device), stock_tensor.to(device), group_tensor.to(device), month_tensor.to(device), day_tensor.to(device), batch_y.to(device)
             output = lstm_model(stock_tensor, group_tensor, day_tensor, month_tensor, batch_X)  # ส่งข้อมูลเข้า LSTM
             # print(output)
             loss = criterion(output, batch_y)  # คำนวณ loss
@@ -95,8 +98,15 @@ def objective(trial):
 if __name__ == "__main__":
 
     # เริ่มต้น Optuna study
-    study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=20)  # ทดลอง 20 รอบ
+    study = optuna.create_study(direction="minimize", pruner=optuna.pruners.MedianPruner(n_warmup_steps=10))
+    study.optimize(objective, n_trials=300)  # ทดลอง 20 รอบ
 
     # แสดงค่า Hyperparameter ที่ดีที่สุด
     print("Best Hyperparameters:", study.best_params)
+    print("Best Trial:", study.best_trial.number)
+    print("Best Parameters:", study.best_trial.params)
+    print("Best Loss:", study.best_trial.value)  # ค่านี้ต้องต่ำที่สุด
+
+    '''
+    {'output_size': 220, 'embedding_dim_stock': 12, 'embedding_dim_group': 8, 'embedding_dim_day': 46, 'embedding_dim_month': 31, 'first_layer_hidden_size': 107, 'first_layer_size': 4, 'second_layer_hidden_size': 304, 'second_layer_size': 1, 'third_layer_hidden_size': 165, 'third_layer_size': 4, 'dropout': 0.312948360649174, 'delta': 0.10003407111863402}
+    '''
