@@ -1,13 +1,13 @@
-# TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","PYPL","CSCO","ADBE","INTU",
-#         "LI","NEE","ON","NIU","ZM","MMM","DUOL","COIN","AVGO","ABNB","QCOM","LOGI","WDC","DBX","CFLT","AMD","ORCL","CRM","MDB","EBAY",
-#         "IBM","BABA","SE","U","SPOT","WAL","RACE","ACN","HPQ","TSM","SBUX","NKE","XOM","DIS","BA","PLTR","SMCI","MSTR","INTC",
-#         "CLSK","BAC","AMC","UNH","UBER","COST","PFE","CRWD","OXY","WMT","LLY","MCD","DELL","SNOW","SOFI","ASML","V","CELH","HIMS"
-#         "JNJ","PG","ENPH","PEP","MA","ABBV","GRAB","KO","PDD","TMDX","ARM","MU","JPM", "PANW","CHWY","F","JD","MRNA","CVX","RBLX","MRK",
-#         "RDDT","BIDU","RTX","PINS","WBD","HSY","HPE","TM","GTLB","NOC","BILI","MDLZ","K","WIX","MSI","NVO","PVH","CDNA","BOX","ANF","AMBA",
-#         "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA", "RGTI"]
+TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","PYPL","CSCO","ADBE","INTU",
+        "LI","NEE","ON","NIU","ZM","MMM","DUOL","COIN","AVGO","ABNB","QCOM","LOGI","WDC","DBX","CFLT","AMD","ORCL","CRM","MDB","EBAY",
+        "IBM","BABA","SE","U","SPOT","WAL","RACE","ACN","HPQ","TSM","SBUX","NKE","XOM","DIS","BA","PLTR","SMCI","MSTR","INTC",
+        "CLSK","BAC","AMC","UNH","UBER","COST","PFE","CRWD","OXY","WMT","LLY","MCD","DELL","SNOW","SOFI","ASML","V","CELH","HIMS"
+        "JNJ","PG","ENPH","PEP","MA","ABBV","GRAB","KO","PDD","TMDX","ARM","MU","JPM", "PANW","CHWY","F","JD","MRNA","CVX","RBLX","MRK",
+        "RDDT","BIDU","RTX","PINS","WBD","HSY","HPE","TM","GTLB","NOC","BILI","MDLZ","K","WIX","MSI","NVO","PVH","CDNA","BOX","ANF","AMBA",
+        "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA", "RGTI"]
 
 # test
-TICKET_LIST = ["AAPL","TSLA","NFLX"]
+# TICKET_LIST = ["AAPL","TSLA","NFLX"]
 
 # ADI
 SECTOR_GROUP = {
@@ -60,7 +60,18 @@ STORSI_DOWN = 0.2
 ICHIMOKU_UP = 1
 ICHIMOKU_DOWN = 0.5
 
-# end year for get data
-YEAR_END = 5
-
+# lstm model config
+LSTM_PARAMS = {'output_size': 139,
+                'embedding_dim_stock': 49,
+                'embedding_dim_group': 15,
+                'embedding_dim_day': 38,
+                'embedding_dim_month': 35,
+                'first_layer_hidden_size': 186,
+                'first_layer_size': 2,
+                'second_layer_hidden_size': 405,
+                'second_layer_size': 5,
+                'third_layer_hidden_size': 202,
+                'third_layer_size': 1,
+                'dropout': 0.16918304089580144,
+                'delta': 0.10013449995372502}
 

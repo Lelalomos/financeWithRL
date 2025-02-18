@@ -4,6 +4,7 @@ import numpy as np
 import torch.nn as nn
 import torch
 
+
 class trading_env(gym.Env):
     metadata = {'render.modes': ['human']}
     def __init__(self,
@@ -87,29 +88,50 @@ class trading_env(gym.Env):
     def render(self, mode='human', close=False):
         print(f'Step: {self.current_step}')
         
-        
 # Define the LSTM model
 class LSTMModel(nn.Module):
-    def __init__(self, input_size=1, output_size=1):
+    def __init__(self, 
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config):
         super(LSTMModel, self).__init__()
 
-        self.lstm1 = nn.LSTM(input_size, 32, 3, batch_first=True)
-        self.dropout = nn.Dropout(0.1)
-        self.lstm21 = nn.LSTM(32, 64, 3, batch_first=True)
-        self.lstm22 = nn.LSTM(64, 64, 3, batch_first=True)
-        self.dropout = nn.Dropout(0.1)
-        self.lstm3 = nn.LSTM(64, 32, 3, batch_first=True)
-        self.fc = nn.Linear(32, output_size)
+        config = config.LSTM_PARAMS
+        self.stock_embedding = nn.Embedding(num_stocks, config["embedding_dim_stock"])
+        self.group_embedding = nn.Embedding(num_group, config['embedding_dim_group'])
+        self.day_embedding = nn.Embedding(num_day, config['embedding_dim_day'])
+        self.month_embedding = nn.Embedding(num_month, config['embedding_dim_month'])
 
-    def forward(self, x):
-        out, _ = self.lstm1(x)
-        out = self.dropout(out)
-        lstm_out21, _ = self.lstm21(out)
-        lstm_out22, _ = self.lstm22(lstm_out21)
-        out1 = self.dropout(lstm_out22)
-        lstm_out3, _ = self.lstm3(out1)
-        fc_out = self.fc(lstm_out3)
-        return fc_out
+        input_dim = config['embedding_dim_stock'] + config['embedding_dim_group'] + config['embedding_dim_day'] + config['embedding_dim_month'] + feature_dim
+        self.batch_norm_input = nn.BatchNorm1d(input_dim)
+        self.lstm1 = nn.LSTM(input_dim, config['first_layer_hidden_size'], config['first_layer_size'], batch_first=True)
+        self.lstm2 = nn.LSTM(config["first_layer_hidden_size"], config['second_layer_hidden_size'], config['second_layer_size'], batch_first=True)
+        self.lstm3 = nn.LSTM(config['second_layer_hidden_size'], config['third_layer_hidden_size'], config['third_layer_size'], batch_first=True)
+        self.dropout = nn.Dropout(config['dropout'])
+        self.fc = nn.Linear(config["third_layer_hidden_size"], config['output_size'])
+
+    def forward(self, stock_name, group_name, day_name, month_name, feature):
+        stock_emb = self.stock_embedding(stock_name)
+        group_emb = self.group_embedding(group_name)
+        month_emb = self.month_embedding(month_name)
+        day_emb = self.day_embedding(day_name)
+
+        combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
+        # print("shape",combind_input.shape)
+        batch_size, seq_len, input_size = combind_input.shape
+        combind_input = combind_input.view(-1, input_size)
+        combind_input = self.batch_norm_input(combind_input)
+        combind_input = combind_input.view(batch_size, seq_len, input_size)
+
+        out, _ = self.lstm1(combind_input)
+        lstm_out21, _ = self.lstm2(out)
+        lstm_out3, _ = self.lstm3(lstm_out21)
+        out1 = self.dropout(lstm_out3)
+        fc_out = self.fc(out1)
+        return torch.tanh(fc_out)
     
 
 # Define the LSTM model
@@ -155,7 +177,6 @@ class LSTMModel_HYPER(nn.Module):
         # print('finish init')
 
     def forward(self, stock_name, group_name, day_name, month_name, feature):
-        
         stock_emb = self.stock_embedding(stock_name)
         group_emb = self.group_embedding(group_name)
         month_emb = self.month_embedding(month_name)
