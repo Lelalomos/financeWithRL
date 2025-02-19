@@ -22,12 +22,12 @@ class prepare_data:
             for tic in ticker_list:
                 if engine_download == "yahoo":
                     temp_df = yf.download(
-                            tic, start=start_date, end=end_date, proxy=proxy, interval = interval
+                            tic, start=start_date, end=end_date, proxy=proxy, interval = interval, multi_level_index=False
                         )
                     self.logging.info(f"download {tic} data from {engine_download}")
                 temp_df["tic"] = tic
                 if len(temp_df) > 0:
-                    df_data = pd.concat([df_data, temp_df])
+                    df_data = pd.concat([df_data, temp_df],axis=0)
             df_data = df_data.reset_index()
             self.logging.info(f"{len(df_data.index)} rows downloaded")
         return df_data

@@ -38,7 +38,7 @@ class normalization_data:
         data_temp = data.copy()
         for column in list_column:
             # use log transform
-            data_temp[column] = np.where(data_temp[column] > 0, np.log(data_temp[column]), np.log(data_temp[column] + 1))
+            data_temp[column] = np.where(data_temp[column] > 0, np.log(data_temp[column]), np.log1p(data_temp[column]))
 
         return data_temp
 

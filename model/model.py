@@ -120,7 +120,8 @@ class LSTMModel(nn.Module):
         day_emb = self.day_embedding(day_name)
 
         combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
-        # print("shape",combind_input.shape)
+        
+        # normalize
         batch_size, seq_len, input_size = combind_input.shape
         combind_input = combind_input.view(-1, input_size)
         combind_input = self.batch_norm_input(combind_input)
@@ -182,10 +183,15 @@ class LSTMModel_HYPER(nn.Module):
         month_emb = self.month_embedding(month_name)
         day_emb = self.day_embedding(day_name)
         
-        # print('concat')
-        combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=1)
-        input_norm = self.batch_norm_input(combind_input)
-        out, _ = self.lstm1(input_norm)
+        combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
+
+        # normalize
+        batch_size, seq_len, input_size = combind_input.shape
+        combind_input = combind_input.view(-1, input_size)
+        combind_input = self.batch_norm_input(combind_input)
+        combind_input = combind_input.view(batch_size, seq_len, input_size)
+
+        out, _ = self.lstm1(combind_input)
         lstm_out21, _ = self.lstm2(out)
         lstm_out3, _ = self.lstm3(lstm_out21)
         out1 = self.dropout(lstm_out3)

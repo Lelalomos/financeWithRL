@@ -11,10 +11,12 @@ import numpy as np
 def objective(trial):
     df_validate_set = pd.read_parquet(os.path.join(os.getcwd(),'data','validate_dataset.parquet'))
 
-    num_stocks = len(df_validate_set['tic_id'].unique())
-    num_group = len(df_validate_set['group_id'].unique())
-    num_month = len(df_validate_set['month'].unique())+1
-    num_day = len(df_validate_set['day'].unique())+1
+    num_stocks = df_validate_set['tic_id'].nunique()+2
+    num_group = df_validate_set['group_id'].nunique()+2
+    num_month = df_validate_set['month'].nunique()+2
+    num_day = df_validate_set['day'].nunique()+2
+
+    print(num_stocks, num_group, num_month, num_day)
     list_except_group = [columns for columns in list(df_validate_set.columns) if columns not in ['tic_id','group_id','month','day']]
     feature = df_validate_set[list_except_group]
     y_val = feature[['pre_7']]
@@ -22,6 +24,7 @@ def objective(trial):
     X_val = feature[list_except_group]
     feature_dim = len(X_val.columns)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = "cpu"
     print("device:",device)
 
     # convert to tensor
@@ -32,6 +35,12 @@ def objective(trial):
     feature_data = torch.tensor(X_val.to_numpy(), dtype=torch.float32).to(device)
     feature_label = torch.tensor(np.array(y_val.values), dtype=torch.float32).to(device)
 
+    stock_tensor = stock_tensor.unsqueeze(1)
+    group_tensor = group_tensor.unsqueeze(1)
+    month_tensor = month_tensor.unsqueeze(1)
+    feature_data = feature_data.unsqueeze(1)
+    day_tensor = day_tensor.unsqueeze(1)
+
     batch_size = 64
     epochs = 10
     
@@ -39,10 +48,10 @@ def objective(trial):
     val_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     output_size = trial.suggest_int("output_size", 64, 256)
-    embedding_dim_stock = trial.suggest_int("embedding_dim_stock", num_stocks+1, 50)
-    embedding_dim_group = trial.suggest_int("embedding_dim_group", num_group+1, 50)
-    embedding_dim_day = trial.suggest_int("embedding_dim_day", num_day+1, 50)
-    embedding_dim_month = trial.suggest_int("embedding_dim_month", num_month+1, 50)
+    embedding_dim_stock = trial.suggest_int("embedding_dim_stock", num_stocks,num_stocks*2)
+    embedding_dim_group = trial.suggest_int("embedding_dim_group", num_group, num_group*2)
+    embedding_dim_day = trial.suggest_int("embedding_dim_day", num_day, num_day*2)
+    embedding_dim_month = trial.suggest_int("embedding_dim_month", num_month, num_month*2)
     # hidden_size_norm = trial.suggest_int("hidden_size_norm", feature_dim, 256)
     first_layer_hidden_size = trial.suggest_int("first_layer_hidden_size", 64, 256)
     first_layer_size = trial.suggest_int("first_layer_size", 1, 5)
@@ -50,8 +59,8 @@ def objective(trial):
     second_layer_size = trial.suggest_int("second_layer_size", 1, 5)
     third_layer_hidden_size = trial.suggest_int("third_layer_hidden_size", 128, 256)
     third_layer_size = trial.suggest_int("third_layer_size", 1, 5)
-    dropout = trial.suggest_uniform('dropout', 0.1, 0.5)
-    delta_params = trial.suggest_float("delta", 0.1, 10.0) 
+    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+    delta_params = trial.suggest_float("delta", 0.1, 10.0)
 
     # สร้างโมเดล LSTM
     lstm_model = LSTMModel_HYPER(output_size,

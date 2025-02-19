@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import sys
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 sys.path.append("/app")
 
 from model.model import LSTMModel
@@ -95,26 +96,60 @@ class train_lstm:
             print(f"Epoch [{epoch+1}/{self.epochs}], Loss: {avg_loss:.4f}")
 
         
-    def eval(self, test_X, test_Y, stock_id, group_id, day_id, month_id):
-        test_X = torch.tensor(test_X, dtype=torch.float32).to(self.device)
-        test_Y = torch.tensor(test_Y, dtype=torch.float32).to(self.device)
-        self.model = LSTMModel(input_size=test_X.shape[1]).to(self.device)
-        test_dataset = TensorDataset(test_X, test_Y)
+    def eval(self, test_X, test_Y, stock_id, group_id, day_id, month_id, feature_dim, num_stocks, num_group, num_day, num_month):
+        test_X = torch.tensor(test_X.to_numpy(), dtype=torch.float32).to(self.device)
+        test_X = test_X.unsqueeze(1)
+        test_Y = torch.tensor(np.array(test_Y), dtype=torch.float32).to(self.device)
+        
+        stock_tensor = torch.tensor(stock_id, dtype=torch.long)
+        group_tensor = torch.tensor(group_id, dtype=torch.long)
+        month_tensor = torch.tensor(month_id, dtype=torch.long)
+        day_tensor = torch.tensor(day_id, dtype=torch.long)
+
+        stock_tensor = stock_tensor.unsqueeze(1)
+        group_tensor = group_tensor.unsqueeze(1)
+        month_tensor = month_tensor.unsqueeze(1)
+        day_tensor = day_tensor.unsqueeze(1)
+        
+        lstm_model = LSTMModel(feature_dim,
+            num_stocks,
+            num_group,
+            num_day,
+            num_month,
+            config).to(self.device)
+        
+        test_dataset = TensorDataset(test_X, stock_tensor, group_tensor, month_tensor, day_tensor, test_Y)
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=self.shuffle_test)
         
         # Test the model
-        self.model.eval()
+        lstm_model.eval()
         test_loss = 0
+        predictions, actuals = [], []
+        criterion = nn.HuberLoss(delta=config.LSTM_PARAMS['delta'])
         with torch.no_grad():
-            for inputs, labels in test_loader:
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-                outputs = self.model(inputs)
-                loss = self.criterion(outputs, labels.unsqueeze(1))
+            for inputs, stock_tensor, group_tensor, month_tensor, day_tensor, labels in test_loader:
+                inputs, stock_tensor, group_tensor, month_tensor, day_tensor, labels = inputs.to(self.device), stock_tensor.to(self.device), group_tensor.to(self.device), month_tensor.to(self.device), day_tensor.to(self.device), labels.to(self.device)
+                outputs = lstm_model(stock_tensor, group_tensor, day_tensor, month_tensor, inputs)
+                loss = criterion(outputs, labels)
                 test_loss += loss.item()
-        test_loss /= len(test_loader)
+
+                predictions.append(outputs.cpu().numpy())
+                actuals.append(labels.cpu().numpy())
+
+        predictions = np.concatenate(predictions, axis=0)
+        actuals = np.concatenate(actuals, axis=0)
+
+        mse = mean_squared_error(actuals, predictions)
+        rmse = np.sqrt(mse)
+        mae = mean_absolute_error(actuals, predictions)
+        r2 = r2_score(actuals, predictions)
         
-        print(f'Test MSE: {test_loss}')
-        
+        print(f"Evaluation Results:")
+        print(f"  MSE  : {mse:.6f}")
+        print(f"  RMSE : {rmse:.6f}")
+        print(f"  MAE  : {mae:.6f}")
+        print(f"  R²   : {r2:.6f}")
+            
         
     def plot_image(self, save_image):
         plt.plot(self.list_loss)

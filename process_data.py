@@ -20,16 +20,18 @@ def main():
     
     logging.info("pull data from yahoo")
     # pull data
-    # if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
-    #     data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
-    # else:
-    # download data
-    data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
-    data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
+    if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
+        data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
+    else:
+        # download data
+        data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
+        data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
 
     logging.info("prepare data")
     # clean data
-    data = pdata_func.pre_clean_data(data)
+    # data = pdata_func.pre_clean_data(data)
+    data = data.rename(columns=config.MAP_COLUMNS_NAME)
+    print("columns",data.columns)
     data = pdata_func.add_indicator(data, config.INDICATOR_LIST)
 
     data = return_candle_pattern(data)
@@ -71,7 +73,7 @@ def main():
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
     group_sector['ichimoku'] = group_sector['ichimoku'].fillna(-1)
     group_sector['macd'] = group_sector['macd'].fillna(-1)
-    
+
     # ต้องเพิ่ม label ว่าต้องการแบบไหน
     # split train, validate, test
     train_set, validate_set, test_set = split_dataset(group_sector)
