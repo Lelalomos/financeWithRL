@@ -1,0 +1,6 @@
+data
+__pycache__
+logs
+logs_images
+*.csv
+*.png
