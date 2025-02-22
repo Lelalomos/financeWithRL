@@ -53,6 +53,9 @@ def objective(trial):
     embedding_dim_day = trial.suggest_int("embedding_dim_day", num_day, num_day*2)
     embedding_dim_month = trial.suggest_int("embedding_dim_month", num_month, num_month*2)
     # hidden_size_norm = trial.suggest_int("hidden_size_norm", feature_dim, 256)
+    hidden_bilstm = trial.suggest_int("hidden_bilstm", 64, 256)
+    num_bilstm = trial.suggest_int("num_bilstm", 1, 5)
+
     first_layer_hidden_size = trial.suggest_int("first_layer_hidden_size", 64, 256)
     first_layer_size = trial.suggest_int("first_layer_size", 1, 5)
     second_layer_hidden_size = trial.suggest_int("second_layer_hidden_size", 256, 512)
@@ -79,7 +82,9 @@ def objective(trial):
                             second_layer_size,
                             third_layer_hidden_size,
                             third_layer_size,
-                            dropout).to(device)
+                            dropout,
+                            hidden_bilstm,
+                            num_bilstm).to(device)
     
 
     criterion = nn.HuberLoss(delta=delta_params)
@@ -108,7 +113,7 @@ if __name__ == "__main__":
 
     # เริ่มต้น Optuna study
     study = optuna.create_study(direction="minimize", pruner=optuna.pruners.MedianPruner(n_warmup_steps=10))
-    study.optimize(objective, n_trials=300)  # ทดลอง 20 รอบ
+    study.optimize(objective, n_trials=500)  # ทดลอง 20 รอบ
 
     history_df = study.trials_dataframe()
 

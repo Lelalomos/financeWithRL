@@ -153,7 +153,9 @@ class LSTMModel_HYPER(nn.Module):
                  second_layer_size,
                  third_layer_hidden_size,
                  third_layer_size,
-                 dropout_value):
+                 dropout_value,
+                 hidden_bilstm,
+                 num_bilstm):
         super().__init__()
 
         # print("num_stocks:",num_stocks)
@@ -166,15 +168,19 @@ class LSTMModel_HYPER(nn.Module):
         self.day_embedding = nn.Embedding(num_day, embedding_dim_day)
         self.month_embedding = nn.Embedding(num_month, embedding_dim_month)
 
+        
         input_dim = embedding_dim_stock + embedding_dim_group + embedding_dim_day+ embedding_dim_month+ feature_dim
-        self.batch_norm_input = nn.BatchNorm1d(input_dim)
-        self.lstm1 = nn.LSTM(input_dim, first_layer_hidden_size, first_layer_size, batch_first=True)
-        self.lstm2 = nn.LSTM(first_layer_hidden_size, second_layer_hidden_size, second_layer_size, batch_first=True)
+        self.bilstm = nn.LSTM(input_dim, hidden_bilstm, num_bilstm, batch_first=True, bidirectional=True)
+        self.batch_norm_input = nn.BatchNorm1d(hidden_bilstm*2)
+
+        self.lstm1 = nn.LSTM(hidden_bilstm*2, first_layer_hidden_size, first_layer_size, batch_first=True, bidirectional=True)
+        self.lstm2 = nn.LSTM(first_layer_hidden_size*2, second_layer_hidden_size, second_layer_size, batch_first=True, bidirectional=True)
         print("input_dim:",input_dim)
-        self.lstm3 = nn.LSTM(second_layer_hidden_size, third_layer_hidden_size, third_layer_size, batch_first=True)
+        self.lstm3 = nn.LSTM(second_layer_hidden_size*2, third_layer_hidden_size, third_layer_size, batch_first=True, bidirectional=True)
         self.dropout = nn.Dropout(dropout_value)
-        # self.batch_norm_hidden = nn.BatchNorm1d(second_layer_hidden_size)
-        self.fc = nn.Linear(third_layer_hidden_size, output_size)
+        
+
+        self.fc = nn.Linear(third_layer_hidden_size*2, output_size)
         # print('finish init')
 
     def forward(self, stock_name, group_name, day_name, month_name, feature):
@@ -184,17 +190,58 @@ class LSTMModel_HYPER(nn.Module):
         day_emb = self.day_embedding(day_name)
         
         combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
+        # print("Embedding output shape:", combind_input.shape)
+
+        # print("out bi:",out)
+        combind_input, _ = self.bilstm(combind_input)
+        # print("bilstm shape:", combind_input.shape)
+        combind_input = combind_input[:, -1, :]
+        # print("bilstm re-shape:", combind_input.shape)
+
+        # combind_input = combind_input.permute(0, 2, 1)
+        combind_input = self.batch_norm_input(combind_input)
+        # print("batch_norm_input:", combind_input.shape)
+        combind_input = combind_input.unsqueeze(1)
+        # print("add dimension batch_norm_input:", combind_input.shape)
+        # combind_input = combind_input.permute(0, 2, 1)
 
         # normalize
-        batch_size, seq_len, input_size = combind_input.shape
-        combind_input = combind_input.view(-1, input_size)
-        combind_input = self.batch_norm_input(combind_input)
-        combind_input = combind_input.view(batch_size, seq_len, input_size)
-
+        # batch_size, seq_len, input_size = combind_input.shape
+        # combind_input = combind_input.view(-1, input_size)
+        # combind_input = self.batch_norm_input(combind_input)
+        # combind_input = combind_input.view(batch_size, seq_len, input_size)
         out, _ = self.lstm1(combind_input)
+        # print("lstm1:", out.shape)
         lstm_out21, _ = self.lstm2(out)
         lstm_out3, _ = self.lstm3(lstm_out21)
+
         out1 = self.dropout(lstm_out3)
+
+        # out1, _ = self.bilstm(out1)
+
         fc_out = self.fc(out1)
         # print("fc_out:",fc_out)
         return torch.tanh(fc_out)
+    
+class AttentionLayer(nn.Module):
+    def __init__(self, input_size, attention_size):
+        super(AttentionLayer, self).__init__()
+        self.query_linear = nn.Linear(input_size, attention_size)
+        self.tanh = nn.Tanh()
+        self.key_linear = nn.Linear(input_size, attention_size)
+        self.value_linear = nn.Linear(input_size, attention_size)
+
+    def forward(self, x):
+        Q = self.query_linear(x)  # Query
+        K = self.key_linear(x)    # Key
+        V = self.value_linear(x)  # Value
+
+        attention_scores = torch.bmm(Q, K.transpose(1, 2))  # Q * K^T
+        attention_scores = attention_scores / (K.size(-1) ** 0.5)  # Scaling
+        attention_scores = self.tanh(attention_scores)
+        attention_weights = nn.softmax(attention_scores, dim=-1)  # Softmax
+        
+        # Weighted sum of values to produce context vector
+        context_vector = torch.bmm(attention_weights, V)
+        
+        return context_vector, attention_weights
