@@ -74,6 +74,9 @@ def main():
     group_sector['ichimoku'] = group_sector['ichimoku'].fillna(-1)
     group_sector['macd'] = group_sector['macd'].fillna(-1)
 
+    # add log transformation with pre_7
+    group_sector = norm_func.norm_each_row_bylogtransform(group_sector, ["pre_7"])
+
     # ต้องเพิ่ม label ว่าต้องการแบบไหน
     # split train, validate, test
     train_set, validate_set, test_set = split_dataset(group_sector)
@@ -81,6 +84,7 @@ def main():
     validate_set = validate_set.drop(["year"],axis=1)
     test_set = test_set.drop(["year"],axis=1)
     train_set = train_set.drop(["year"],axis=1)
+
 
     validate_set.to_parquet(os.path.join(os.getcwd(),"data","validate_dataset.parquet"))
     test_set.to_parquet(os.path.join(os.getcwd(),"data","test_dataset.parquet"))

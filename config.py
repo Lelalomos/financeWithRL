@@ -40,6 +40,8 @@ SECTOR_GROUP = {
         "astros":["RTX","NOC"]
 }
 
+MODEL = "lstm_with_attention"
+
 WEIGHT_GROUP = {
     "software":1,
     "security":1,

@@ -3,6 +3,7 @@ import gymnasium as gym
 import numpy as np
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 
 
 class trading_env(gym.Env):
@@ -194,30 +195,97 @@ class LSTMModel_HYPER(nn.Module):
 
         # print("out bi:",out)
         combind_input, _ = self.bilstm(combind_input)
-        # print("bilstm shape:", combind_input.shape)
         combind_input = combind_input[:, -1, :]
-        # print("bilstm re-shape:", combind_input.shape)
-
-        # combind_input = combind_input.permute(0, 2, 1)
         combind_input = self.batch_norm_input(combind_input)
-        # print("batch_norm_input:", combind_input.shape)
         combind_input = combind_input.unsqueeze(1)
-        # print("add dimension batch_norm_input:", combind_input.shape)
-        # combind_input = combind_input.permute(0, 2, 1)
-
-        # normalize
-        # batch_size, seq_len, input_size = combind_input.shape
-        # combind_input = combind_input.view(-1, input_size)
-        # combind_input = self.batch_norm_input(combind_input)
-        # combind_input = combind_input.view(batch_size, seq_len, input_size)
         out, _ = self.lstm1(combind_input)
-        # print("lstm1:", out.shape)
         lstm_out21, _ = self.lstm2(out)
         lstm_out3, _ = self.lstm3(lstm_out21)
 
         out1 = self.dropout(lstm_out3)
 
-        # out1, _ = self.bilstm(out1)
+        fc_out = self.fc(out1)
+        # print("fc_out:",fc_out)
+        return torch.tanh(fc_out)
+    
+
+class LSTMModelwithAttention_HYPER(nn.Module):
+    def __init__(self, output_size, 
+                 num_stocks, 
+                 num_group, 
+                 num_day, 
+                 num_month, 
+                 embedding_dim_stock, 
+                 embedding_dim_group, 
+                 embedding_dim_day, 
+                 embedding_dim_month,
+                 feature_dim,
+                 first_layer_hidden_size,
+                 first_layer_size,
+                 second_layer_hidden_size,
+                 second_layer_size,
+                 third_layer_hidden_size,
+                 third_layer_size,
+                 dropout_value,
+                 hidden_bilstm,
+                 num_bilstm,
+                 attent_hidden_size):
+        super().__init__()
+
+        # print("num_stocks:",num_stocks)
+        # print("num_group:",num_group)
+        # print("num_day:",num_day,embedding_dim_day)
+        # print("num_month:",num_month)
+
+        self.stock_embedding = nn.Embedding(num_stocks, embedding_dim_stock)
+        self.group_embedding = nn.Embedding(num_group, embedding_dim_group)
+        self.day_embedding = nn.Embedding(num_day, embedding_dim_day)
+        self.month_embedding = nn.Embedding(num_month, embedding_dim_month)
+
+        
+        input_dim = embedding_dim_stock + embedding_dim_group + embedding_dim_day+ embedding_dim_month+ feature_dim
+        self.bilstm = nn.LSTM(input_dim, hidden_bilstm, num_bilstm, batch_first=True, bidirectional=True)
+        self.batch_norm_input = nn.BatchNorm1d(hidden_bilstm*2)
+
+        self.lstm1 = nn.LSTM(hidden_bilstm*2, first_layer_hidden_size, first_layer_size, batch_first=True, bidirectional=True)
+        self.lstm2 = nn.LSTM(first_layer_hidden_size*2, second_layer_hidden_size, second_layer_size, batch_first=True, bidirectional=True)
+        print("input_dim:",input_dim)
+        self.lstm3 = nn.LSTM(second_layer_hidden_size*2, third_layer_hidden_size, third_layer_size, batch_first=True, bidirectional=True)
+        print("before attention")
+        self.attention = AttentionLayer(third_layer_hidden_size * 2, attent_hidden_size)
+        print("after attention")
+
+        self.dropout = nn.Dropout(dropout_value)
+        
+
+        self.fc = nn.Linear(attent_hidden_size, output_size)
+        # print('finish init')
+
+    def forward(self, stock_name, group_name, day_name, month_name, feature):
+        stock_emb = self.stock_embedding(stock_name)
+        group_emb = self.group_embedding(group_name)
+        month_emb = self.month_embedding(month_name)
+        day_emb = self.day_embedding(day_name)
+        
+        combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
+        # print("Embedding output shape:", combind_input.shape)
+
+        # print("out bi:",out)
+        combind_input, _ = self.bilstm(combind_input)
+        combind_input = combind_input[:, -1, :]
+        combind_input = self.batch_norm_input(combind_input)
+        combind_input = combind_input.unsqueeze(1)
+        out, _ = self.lstm1(combind_input)
+        lstm_out21, _ = self.lstm2(out)
+        lstm_out3, _ = self.lstm3(lstm_out21)
+
+        context_vector, _ = self.attention(lstm_out3)
+
+        # Flatten context_vector and pass through fully connected layer
+        context_vector = context_vector.squeeze(1)
+        
+
+        out1 = self.dropout(context_vector)
 
         fc_out = self.fc(out1)
         # print("fc_out:",fc_out)
@@ -227,21 +295,26 @@ class AttentionLayer(nn.Module):
     def __init__(self, input_size, attention_size):
         super(AttentionLayer, self).__init__()
         self.query_linear = nn.Linear(input_size, attention_size)
-        self.tanh = nn.Tanh()
         self.key_linear = nn.Linear(input_size, attention_size)
         self.value_linear = nn.Linear(input_size, attention_size)
 
     def forward(self, x):
-        Q = self.query_linear(x)  # Query
-        K = self.key_linear(x)    # Key
-        V = self.value_linear(x)  # Value
+        batch_size, seq_len, _ = x.size()
 
-        attention_scores = torch.bmm(Q, K.transpose(1, 2))  # Q * K^T
-        attention_scores = attention_scores / (K.size(-1) ** 0.5)  # Scaling
-        attention_scores = self.tanh(attention_scores)
-        attention_weights = nn.softmax(attention_scores, dim=-1)  # Softmax
-        
-        # Weighted sum of values to produce context vector
-        context_vector = torch.bmm(attention_weights, V)
-        
+        Q = self.query_linear(x)  # (batch_size, seq_len, attention_size)
+        K = self.key_linear(x)    # (batch_size, seq_len, attention_size)
+        V = self.value_linear(x)  # (batch_size, seq_len, attention_size)
+
+        # Calculate attention scores: Q * K^T
+        attention_scores = torch.bmm(Q, K.transpose(1, 2))  # (batch_size, seq_len, seq_len)
+
+        # Scale scores
+        attention_scores = attention_scores / (K.size(-1) ** 0.5)
+
+        # Apply softmax to get attention weights
+        attention_weights = F.softmax(attention_scores, dim=-1)
+
+        # Weighted sum of values
+        context_vector = torch.bmm(attention_weights, V)  # (batch_size, seq_len, attention_size)
+
         return context_vector, attention_weights

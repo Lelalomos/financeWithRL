@@ -1,11 +1,15 @@
 import optuna
 import torch
 import torch.nn as nn
-from model import LSTMModel_HYPER
+from model import LSTMModel_HYPER, LSTMModelwithAttention_HYPER
 from torch.utils.data import DataLoader, TensorDataset
 import pandas as pd
 import os
 import numpy as np
+import sys
+sys.path.append("/app")
+
+import config
 
 # กำหนดฟังก์ชัน objective (เป้าหมายของการหาค่าที่ดีที่สุด)
 def objective(trial):
@@ -64,27 +68,52 @@ def objective(trial):
     third_layer_size = trial.suggest_int("third_layer_size", 1, 5)
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
     delta_params = trial.suggest_float("delta", 0.1, 10.0)
+    attent_hidden_size = trial.suggest_int("attent_hidden_size", 32, 256)
 
     # สร้างโมเดล LSTM
-    lstm_model = LSTMModel_HYPER(output_size,
-                            num_stocks,
-                            num_group,
-                            num_day,
-                            num_month,
-                            embedding_dim_stock,
-                            embedding_dim_group,
-                            embedding_dim_day,
-                            embedding_dim_month,
-                            feature_dim,
-                            first_layer_hidden_size,
-                            first_layer_size,
-                            second_layer_hidden_size,
-                            second_layer_size,
-                            third_layer_hidden_size,
-                            third_layer_size,
-                            dropout,
-                            hidden_bilstm,
-                            num_bilstm).to(device)
+    if config.MODEL == "lstm":
+        lstm_model = LSTMModel_HYPER(output_size,
+                                num_stocks,
+                                num_group,
+                                num_day,
+                                num_month,
+                                embedding_dim_stock,
+                                embedding_dim_group,
+                                embedding_dim_day,
+                                embedding_dim_month,
+                                feature_dim,
+                                first_layer_hidden_size,
+                                first_layer_size,
+                                second_layer_hidden_size,
+                                second_layer_size,
+                                third_layer_hidden_size,
+                                third_layer_size,
+                                dropout,
+                                hidden_bilstm,
+                                num_bilstm).to(device)
+    elif config.MODEL == "lstm_with_attention":
+        lstm_model = LSTMModelwithAttention_HYPER(
+            output_size,
+            num_stocks,
+            num_group,
+            num_day,
+            num_month,
+            embedding_dim_stock,
+            embedding_dim_group,
+            embedding_dim_day,
+            embedding_dim_month,
+            feature_dim,
+            first_layer_hidden_size,
+            first_layer_size,
+            second_layer_hidden_size,
+            second_layer_size,
+            third_layer_hidden_size,
+            third_layer_size,
+            dropout,
+            hidden_bilstm,
+            num_bilstm,
+            attent_hidden_size
+        ).to(device)
     
 
     criterion = nn.HuberLoss(delta=delta_params)
