@@ -38,11 +38,11 @@ class normalization_data:
         data_temp = data.copy()
         for column in list_column:
             # use log transform
-            data_temp[column] = np.where(data_temp[column] > 0, np.log(data_temp[column]), np.log1p(data_temp[column]))
+            data_temp[column] = np.where(data_temp[column] > 0, np.log(data_temp[column]), np.sign(data_temp[column]) * np.log1p(np.abs(data_temp[column])))
 
         return data_temp
 
-    def norm_power_transform(data, list_column):
+    def norm_power_transform(self, data, list_column):
         data_temp = data.copy()
         # this method is support negative value
         pt = PowerTransformer(method='yeo-johnson')
@@ -52,7 +52,7 @@ class normalization_data:
 
         return data_temp
     
-    def norm_quantile_transform(data, list_column):
+    def norm_quantile_transform(self, data, list_column):
         data_temp = data.copy()
         qt = QuantileTransformer(output_distribution='normal')  # ปรับให้เป็น Gaussian
         for column in list_column:

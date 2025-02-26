@@ -283,8 +283,6 @@ class LSTMModelwithAttention_HYPER(nn.Module):
 
         # Flatten context_vector and pass through fully connected layer
         context_vector = context_vector.squeeze(1)
-        
-
         out1 = self.dropout(context_vector)
 
         fc_out = self.fc(out1)
@@ -295,26 +293,21 @@ class AttentionLayer(nn.Module):
     def __init__(self, input_size, attention_size):
         super(AttentionLayer, self).__init__()
         self.query_linear = nn.Linear(input_size, attention_size)
+        self.tanh = nn.Tanh()
         self.key_linear = nn.Linear(input_size, attention_size)
         self.value_linear = nn.Linear(input_size, attention_size)
 
     def forward(self, x):
-        batch_size, seq_len, _ = x.size()
+        Q = self.query_linear(x)  # Query
+        K = self.key_linear(x)    # Key
+        V = self.value_linear(x)  # Value
 
-        Q = self.query_linear(x)  # (batch_size, seq_len, attention_size)
-        K = self.key_linear(x)    # (batch_size, seq_len, attention_size)
-        V = self.value_linear(x)  # (batch_size, seq_len, attention_size)
-
-        # Calculate attention scores: Q * K^T
-        attention_scores = torch.bmm(Q, K.transpose(1, 2))  # (batch_size, seq_len, seq_len)
-
-        # Scale scores
-        attention_scores = attention_scores / (K.size(-1) ** 0.5)
-
-        # Apply softmax to get attention weights
-        attention_weights = F.softmax(attention_scores, dim=-1)
-
-        # Weighted sum of values
-        context_vector = torch.bmm(attention_weights, V)  # (batch_size, seq_len, attention_size)
+        attention_scores = torch.bmm(Q, K.transpose(1, 2))  # Q * K^T
+        attention_scores = attention_scores / (K.size(-1) ** 0.5)  # Scaling
+        attention_scores = self.tanh(attention_scores)
+        attention_weights =  F.softmax(attention_scores, dim=-1)  # Softmax
+        
+        # Weighted sum of values to produce context vector
+        context_vector = torch.bmm(attention_weights, V)
 
         return context_vector, attention_weights
