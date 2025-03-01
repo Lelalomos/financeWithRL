@@ -9,7 +9,7 @@ import sys
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 sys.path.append("/app")
 
-from model.model import LSTMModel
+from model.model import LSTMModel, LSTMModelwithAttention
 import config
 import os
 
@@ -56,15 +56,25 @@ class train_lstm:
         print('shape:',train_X.shape, stock_tensor.shape)
         train_dataset = TensorDataset(train_X, stock_tensor, group_tensor, month_tensor, day_tensor, train_Y)
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=self.shuffle_train)
+        if config.MODEL == "lstm":
+            lstm_model = LSTMModel(
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config
+            ).to(self.device)
+        elif config.MODEL == "lstm_with_attention":
+            lstm_model = LSTMModelwithAttention(
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config
+            ).to(self.device)
 
-        lstm_model = LSTMModel(
-            feature_dim,
-            num_stocks,
-            num_group,
-            num_day,
-            num_month,
-            config
-        ).to(self.device)
         optimizer = torch.optim.Adam(lstm_model.parameters())
         criterion = nn.HuberLoss(delta=config.LSTM_PARAMS['delta'])
         

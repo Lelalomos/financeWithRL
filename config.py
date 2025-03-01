@@ -91,5 +91,37 @@ ICHIMOKU_UP = 1
 ICHIMOKU_DOWN = 0.5
 
 # lstm model config
-LSTM_PARAMS = {'output_size': 226, 'embedding_dim_stock': 6, 'embedding_dim_group': 10, 'embedding_dim_day': 44, 'embedding_dim_month': 18, 'first_layer_hidden_size': 182, 'first_layer_size': 1, 'second_layer_hidden_size': 376, 'second_layer_size': 1, 'third_layer_hidden_size': 216, 'third_layer_size': 1, 'dropout': 0.23667559523715945, 'delta': 0.10007115305567968}
+LSTM_PARAMS = {
+    'output_size': 226, 
+    'embedding_dim_stock': 6, 
+    'embedding_dim_group': 10, 
+    'embedding_dim_day': 44, 
+    'embedding_dim_month': 18, 
+    'first_layer_hidden_size': 182, 
+    'first_layer_size': 1, 
+    'second_layer_hidden_size': 376, 
+    'second_layer_size': 1, 
+    'third_layer_hidden_size': 216, 
+    'third_layer_size': 1, 
+    'dropout': 0.23667559523715945, 
+    'delta': 0.10007115305567968
+    }
 
+LSTM_ATTENTION_PARAMS = {
+    'output_size': 151, 
+    'embedding_dim_stock': 8, 
+    'embedding_dim_group': 10, 
+    'embedding_dim_day': 56, 
+    'embedding_dim_month': 18, 
+    'hidden_bilstm': 245, 
+    'num_bilstm': 4, 
+    'first_layer_hidden_size': 192, 
+    'first_layer_size': 3, 
+    'second_layer_hidden_size': 382, 
+    'second_layer_size': 1, 
+    'third_layer_hidden_size': 150, 
+    'third_layer_size': 4, 
+    'dropout': 0.3674865528282973, 
+    'delta': 0.10321824319015935, 
+    'attent_hidden_size': 141
+    }
