@@ -20,12 +20,12 @@ def main():
     
     logging.info("pull data from yahoo")
     # pull data
-    if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
-        data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
-    else:
+    # if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
+    #     data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
+    # else:
         # download data
-        data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
-        data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
+    data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
+    data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
 
     logging.info("prepare data")
     # clean data
@@ -33,6 +33,11 @@ def main():
     data = data.rename(columns=config.MAP_COLUMNS_NAME)
     print("columns",data.columns)
     data = pdata_func.add_indicator(data, config.INDICATOR_LIST)
+
+    # add resource data
+    # data.to_csv("before_add.csv")
+    data = pdata_func.add_commodity_data(data)
+    # data.to_csv("add_commod.csv")
 
     data = return_candle_pattern(data)
     data = data.fillna(0)

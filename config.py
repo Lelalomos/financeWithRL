@@ -9,6 +9,13 @@
 # test
 TICKET_LIST = ["GOOGL","MSFT","META","NFLX","RDDT","ABNB"]
 
+COMMODITY = {
+            'GC=F': 'Gold',
+            'HG=F': 'Copper',
+            'ZC=F': 'Corn',
+            'ZS=F': 'Soybeans'
+        }
+
 SECTOR_GROUP = {
         "software":["ADBE","DUOL","CRM","MDB",
                     "U","SPOT","ACN","PINS","GTLB","WIX","BOX","AMBA",

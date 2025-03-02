@@ -82,6 +82,19 @@ class prepare_data:
 
         return dataframe
     
+    def add_commodity_data(self, dataframe):
+        df_copy = dataframe.copy()
+        for resource in config.COMMODITY.keys():
+            res_data = yf.download(resource, start=None, end=None, multi_level_index=False)
+            res_data = res_data.reset_index()
+            res_data = res_data[['Date', 'Close']]
+            res_data['Date'] = pd.to_datetime(res_data['Date'])
+            df_copy['Date'] = pd.to_datetime(df_copy['Date'])
+            res_data = res_data.rename(columns={'Close':config.COMMODITY[resource]})
+            res_data['Date'] = pd.to_datetime(res_data['Date'])
+            df_copy = pd.merge(df_copy, res_data, how="inner", on="Date")
+        return df_copy
+    
     def interpret_indicator(self, dataframe):
         # rsi
         dataframe['rsi_14'] = dataframe['rsi_14']/100
