@@ -6,6 +6,7 @@ from utils.logger import return_logs
 import os
 import yfinance as yf
 import traceback
+import pandas_datareader.data as web
 from functions import cal_rsi, cal_storsi, cal_ema
 import sys
 sys.path.append("/app")
@@ -87,12 +88,37 @@ class prepare_data:
         for resource in config.COMMODITY.keys():
             res_data = yf.download(resource, start=None, end=None, multi_level_index=False)
             res_data = res_data.reset_index()
-            res_data = res_data[['Date', 'Close']]
+            res_data['mean'] = res_data[['Close','High', 'Low','Open']].mean(axis=1)
+            res_data = res_data[['Date', 'mean']]
             res_data['Date'] = pd.to_datetime(res_data['Date'])
             df_copy['Date'] = pd.to_datetime(df_copy['Date'])
-            res_data = res_data.rename(columns={'Close':config.COMMODITY[resource]})
-            res_data['Date'] = pd.to_datetime(res_data['Date'])
+            res_data = res_data.rename(columns={'mean':config.COMMODITY[resource]})
             df_copy = pd.merge(df_copy, res_data, how="inner", on="Date")
+        return df_copy
+    
+    def add_vix_data(self, dataframe):
+        df_copy = dataframe.copy()
+        res_data = yf.download("^VIX", start=None, end=None, multi_level_index=False)
+        res_data = res_data.reset_index()
+        res_data['mean'] = res_data[['Close','High', 'Low','Open']].mean(axis=1)
+        res_data = res_data[['Date', 'mean']]
+        res_data['Date'] = pd.to_datetime(res_data['Date'])
+        df_copy['Date'] = pd.to_datetime(df_copy['Date'])
+        res_data = res_data.rename(columns={'mean':'vix'})
+        df_copy = pd.merge(df_copy, res_data, how="inner", on="Date")
+        return df_copy
+    
+    def add_bond_yields(self, dataframe):
+        df_copy = dataframe.copy()
+        bond_yields = web.DataReader(['DGS10', 'DGS30', 'DGS2'], 'fred', None, None)
+        bond_yields.columns = ['10Y_Treasury_Yield', '30Y_Treasury_Yield', '2Y_Treasury_Yield']
+        bond_yields = bond_yields.reset_index()
+        bond_yields['mean'] = bond_yields[list(bond_yields.columns)].mean(axis=1)
+        bond_yields = bond_yields[['Date', 'mean']]
+        bond_yields['Date'] = pd.to_datetime(bond_yields['Date'])
+        df_copy['Date'] = pd.to_datetime(df_copy['Date'])
+        bond_yields = bond_yields.rename(columns={'mean':'bondyield'})
+        df_copy = pd.merge(df_copy, bond_yields, how="inner", on="Date")
         return df_copy
     
     def interpret_indicator(self, dataframe):
