@@ -24,8 +24,17 @@ def main():
     #     data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
     # else:
         # download data
-    data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
-    data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
+    if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
+        data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
+    else:
+        data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
+        data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
+
+    # data = data[data["tic"].isin(config.TICKET_LIST)]
+    data = data[data['Date'].dt.year >=2001]
+
+    # filter tickle
+    data = data[~data['tic'].isin(list(config.not_use))]
 
     logging.info("prepare data")
     # clean data
@@ -37,6 +46,9 @@ def main():
     # add resource data
     # data.to_csv("before_add.csv")
     data = pdata_func.add_commodity_data(data)
+    data = pdata_func.add_vix_data(data)
+    data = pdata_func.add_bond_yields(data)
+
     # data.to_csv("add_commod.csv")
 
     data = return_candle_pattern(data)
@@ -72,7 +84,7 @@ def main():
     group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(100,200),axis=1)
 
     # column Outliers
-    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku']
+    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())
 
     # df_outlier = group_sector[outliers_column]
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
@@ -81,6 +93,8 @@ def main():
 
     # add log transformation with pre_7
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, ["pre_7"])
+
+    group_sector = group_sector.round(4)
 
     # ต้องเพิ่ม label ว่าต้องการแบบไหน
     # split train, validate, test

@@ -1,13 +1,26 @@
-# TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","PYPL","CSCO","ADBE","INTU",
-#         "LI","NEE","ON","NIU","ZM","MMM","DUOL","COIN","AVGO","ABNB","QCOM","LOGI","WDC","DBX","CFLT","AMD","ORCL","CRM","MDB","EBAY",
-#         "IBM","BABA","SE","U","SPOT","WAL","RACE","ACN","HPQ","TSM","SBUX","NKE","XOM","DIS","BA","PLTR","SMCI","MSTR","INTC",
-#         "CLSK","BAC","AMC","UNH","UBER","COST","PFE","CRWD","OXY","WMT","LLY","MCD","DELL","SNOW","SOFI","ASML","V","CELH","HIMS"
-#         "JNJ","PG","ENPH","PEP","MA","ABBV","GRAB","KO","PDD","TMDX","ARM","MU","JPM", "PANW","CHWY","F","JD","MRNA","CVX","RBLX","MRK",
-#         "RDDT","BIDU","RTX","PINS","WBD","HSY","HPE","TM","GTLB","NOC","BILI","MDLZ","K","WIX","MSI","NVO","PVH","CDNA","BOX","ANF","AMBA",
-#         "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA", "RGTI"]
+TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","PYPL","CSCO","ADBE","INTU",
+        "LI","NEE","ON","NIU","ZM","MMM","DUOL","COIN","AVGO","ABNB","QCOM","LOGI","WDC","DBX","CFLT","AMD","ORCL","CRM","MDB","EBAY",
+        "IBM","BABA","SE","U","SPOT","WAL","RACE","ACN","HPQ","TSM","SBUX","NKE","XOM","DIS","BA","PLTR","SMCI","MSTR","INTC",
+        "CLSK","BAC","AMC","UNH","UBER","COST","PFE","CRWD","OXY","WMT","LLY","MCD","DELL","SNOW","SOFI","ASML","V","CELH","HIMS",
+        "JNJ","PG","ENPH","PEP","MA","ABBV","GRAB","KO","PDD","TMDX","ARM","MU","JPM", "PANW","CHWY","F","JD","MRNA","CVX","RBLX","MRK",
+        "RDDT","BIDU","RTX","PINS","WBD","HSY","HPE","TM","GTLB","NOC","BILI","MDLZ","K","WIX","MSI","NVO","PVH","CDNA","BOX","ANF","AMBA",
+        "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA", "RGTI"]
 
+not_use = ['DUOL',
+ 'COIN',
+ 'CFLT',
+ 'SOFI',
+ 'HIMS',
+ 'JNJ',
+ 'ARM',
+ 'RBLX',
+ 'RDDT',
+ 'GTLB',
+ 'S',
+ 'ZIM',
+ 'RGTI']
 # test
-TICKET_LIST = ["GOOGL","MSFT","META","NFLX","RDDT","ABNB"]
+# TICKET_LIST = ["GOOGL","MSFT","META","NFLX","RDDT","ABNB"]
 
 COMMODITY = {
             'GC=F': 'Gold',
@@ -115,20 +128,19 @@ LSTM_PARAMS = {
     }
 
 LSTM_ATTENTION_PARAMS = {
-    'output_size': 151, 
-    'embedding_dim_stock': 8, 
-    'embedding_dim_group': 10, 
-    'embedding_dim_day': 56, 
-    'embedding_dim_month': 18, 
-    'hidden_bilstm': 245, 
+    'output_size': 101, 
+    'embedding_dim_stock': 186, 
+    'embedding_dim_group': 44, 
+    'embedding_dim_day': 57, 
+    'embedding_dim_month': 27, 
+    'hidden_bilstm': 193, 
     'num_bilstm': 4, 
-    'first_layer_hidden_size': 192, 
+    'first_layer_hidden_size': 96, 
     'first_layer_size': 3, 
-    'second_layer_hidden_size': 382, 
-    'second_layer_size': 1, 
-    'third_layer_hidden_size': 150, 
-    'third_layer_size': 4, 
-    'dropout': 0.3674865528282973, 
-    'delta': 0.10321824319015935, 
-    'attent_hidden_size': 141
-    }
+    'second_layer_hidden_size': 415, 
+    'second_layer_size': 5, 
+    'third_layer_hidden_size': 145, 
+    'third_layer_size': 2, 
+    'dropout': 0.45539417658510856, 
+    'delta': 0.1273437916639349, 
+    'attent_hidden_size': 228}

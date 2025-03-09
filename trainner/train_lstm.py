@@ -13,6 +13,13 @@ from model.model import LSTMModel, LSTMModelwithAttention
 import config
 import os
 
+torch.cuda.empty_cache() 
+
+# torch.cuda.synchronize()
+# torch.backends.cudnn.enabled = False
+# os.environ['TORCH_USE_CUDA_DSA'] = '1'
+# os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+
 class train_lstm:
     def __init__(self,
                  epochs = 200, 
@@ -75,13 +82,13 @@ class train_lstm:
                 config
             ).to(self.device)
 
-        optimizer = torch.optim.Adam(lstm_model.parameters())
+        optimizer = torch.optim.Adam(lstm_model.parameters(), lr=0.001)
         criterion = nn.HuberLoss(delta=config.LSTM_PARAMS['delta'])
         
-        print("-"*20,"Model","-"*20)
-        for name, param in lstm_model.state_dict().items():
-            print(f"{name}: {param.shape}")
-        print("-"*50)
+        # print("-"*20,"Model","-"*20)
+        # for name, param in lstm_model.state_dict().items():
+        #     print(f"{name}: {param.shape}")
+        # print("-"*50)
         
         # Train the model
         for epoch in range(self.epochs):
@@ -90,10 +97,16 @@ class train_lstm:
                 optimizer.zero_grad()
                 inputs, stock_tensor, group_tensor, month_tensor, day_tensor, labels = inputs.to(self.device), stock_tensor.to(self.device), group_tensor.to(self.device), month_tensor.to(self.device), day_tensor.to(self.device), labels.to(self.device)
                 outputs = lstm_model(stock_tensor, group_tensor, day_tensor, month_tensor, inputs)
+
+                # print("Checking for NaNs or infinities...")
+                # print(f"Model output has NaN: {torch.isnan(outputs).any()}")
+                # print(f"Labels have NaN: {torch.isnan(labels).any()}")
+
                 loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
-                self.list_loss.append(loss.item())
+                # print(loss)
+                # self.list_loss.append(loss.item())
                 val_loss += loss.item()
                     
                 if self.debug_loss:
@@ -186,7 +199,9 @@ if __name__ == "__main__":
     y_val = feature[['pre_7']]
     list_except_group = [columns for columns in list_except_group if columns not in ['pre_7']]
     X_val = feature[list_except_group]
+    print(f"X_val: {X_val.columns}")
     feature_dim = len(X_val.columns)
+    print(f"feature_dim: {feature_dim}")
 
     stock_tensor = df_train['tic_id'].astype(int).to_list()
     group_tensor = df_train['group_id'].astype(int).to_list()

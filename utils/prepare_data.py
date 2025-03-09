@@ -93,7 +93,7 @@ class prepare_data:
             res_data['Date'] = pd.to_datetime(res_data['Date'])
             df_copy['Date'] = pd.to_datetime(df_copy['Date'])
             res_data = res_data.rename(columns={'mean':config.COMMODITY[resource]})
-            df_copy = pd.merge(df_copy, res_data, how="inner", on="Date")
+            df_copy = pd.merge(df_copy, res_data, how="left", on="Date")
         return df_copy
     
     def add_vix_data(self, dataframe):
@@ -105,7 +105,7 @@ class prepare_data:
         res_data['Date'] = pd.to_datetime(res_data['Date'])
         df_copy['Date'] = pd.to_datetime(df_copy['Date'])
         res_data = res_data.rename(columns={'mean':'vix'})
-        df_copy = pd.merge(df_copy, res_data, how="inner", on="Date")
+        df_copy = pd.merge(df_copy, res_data, how="left", on="Date")
         return df_copy
     
     def add_bond_yields(self, dataframe):
@@ -113,12 +113,14 @@ class prepare_data:
         bond_yields = web.DataReader(['DGS10', 'DGS30', 'DGS2'], 'fred', None, None)
         bond_yields.columns = ['10Y_Treasury_Yield', '30Y_Treasury_Yield', '2Y_Treasury_Yield']
         bond_yields = bond_yields.reset_index()
-        bond_yields['mean'] = bond_yields[list(bond_yields.columns)].mean(axis=1)
+        print("bond_yields:",bond_yields.columns)
+        bond_yields['mean'] = bond_yields[['10Y_Treasury_Yield', '30Y_Treasury_Yield', '2Y_Treasury_Yield']].mean(axis=1)
+        bond_yields = bond_yields.rename(columns={"DATE":"Date"})
         bond_yields = bond_yields[['Date', 'mean']]
         bond_yields['Date'] = pd.to_datetime(bond_yields['Date'])
         df_copy['Date'] = pd.to_datetime(df_copy['Date'])
         bond_yields = bond_yields.rename(columns={'mean':'bondyield'})
-        df_copy = pd.merge(df_copy, bond_yields, how="inner", on="Date")
+        df_copy = pd.merge(df_copy, bond_yields, how="left", on="Date")
         return df_copy
     
     def interpret_indicator(self, dataframe):
