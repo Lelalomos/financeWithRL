@@ -34,7 +34,7 @@ def main():
     data = data[data['Date'].dt.year >=2001]
 
     # filter tickle
-    data = data[~data['tic'].isin(list(config.not_use))]
+    # data = data[~data['tic'].isin(list(config.not_use))]
 
     logging.info("prepare data")
     # clean data
@@ -59,7 +59,6 @@ def main():
     data['month'] = data['Date'].dt.month
     data['year'] = data['Date'].dt.year
     data = data.sort_values(by=["Date", "tic"])
-    data.drop(['Date'], inplace=True, axis=1)
 
     # make label
     data["pre_7"] = data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
@@ -68,6 +67,7 @@ def main():
 
     # grouping sector in stock
     group_sector = groupping_stock(data, config)
+    group_sector = group_sector.sort_values(by=["Date", "tic"])
     group_sector = convert_string2int(group_sector)
 
     # interpreter data
@@ -94,7 +94,8 @@ def main():
     # add log transformation with pre_7
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, ["pre_7"])
 
-    group_sector = group_sector.round(4)
+    # group_sector = group_sector.round(4)
+    group_sector.drop(['Date'], inplace=True, axis=1)
 
     # ต้องเพิ่ม label ว่าต้องการแบบไหน
     # split train, validate, test

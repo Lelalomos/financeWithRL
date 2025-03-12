@@ -7,6 +7,8 @@ import pandas as pd
 import talib
 import config
 from pipe import dedup
+from datetime import datetime
+import math
 
 def search_null_value(df):
     columns_with_null = df.columns[df.isnull().any()]
@@ -254,18 +256,61 @@ def cal_ema(value, min_tema, max_tema):
         return 0
     
 
-def split_dataset(df):
-    list_year = df['year'].to_list()
-    list_year = list(list_year|dedup)
+def split_dataset(df, test_ratio=0.06, validate_ratio = 0.06):
+    today = datetime.today()
+    df_test = pd.DataFrame(dtype=str)
+    df_train = pd.DataFrame(dtype=str)
+    df_validate = pd.DataFrame(dtype=str)
 
-    # split train_set, validate_set, test_set
-    train_set = list_year[:-5]
-    validate_set = list_year[-5:-3]
-    test_set = list_year[-3:-1]
+    # df['Date'] = pd.to_datetime(df['Date'])
+    for tic in list(df['tic_id'].unique()):
+        print(tic)
+        temp = df[df['tic_id'] == tic]
+        temp['year'] = temp['year'].astype('int')
+        list_year = list(temp['year'].unique())
+        list_year = [y for y in list_year if str(y) != str(today.year)]
+        len_year = len(list_year)
+        print(f"list_date: {list_year}")
+        if len_year > 2:
+            num_test = math.ceil(len_year*test_ratio)
+            num_validate = math.ceil(len_year*validate_ratio)
+            print("int(num_test)*-1:",int(num_test), int(num_validate))
+            list_test = list_year[int(num_test)*-1:]
+            list_validate = list_year[(int(num_test)+int(num_validate))*-1:int(num_test)*-1]
+            list_train = list_year[:(int(num_test)+int(num_validate))*-1]
 
-    df['year'] = df['year'].astype(int)
-    df_train_set = df[(df['year']>=train_set[0]) & (df['year']<=train_set[-1])]
-    df_validate_set = df[(df['year']>=validate_set[0]) & (df['year']<=validate_set[-1])]
-    df_test_set = df[(df['year']>=test_set[0]) & (df['year']<=test_set[-1])]
+            print(f"list_test:{list_test}")
+            print(f"list_validate:{list_validate}")
+            print(f"list_train: {list_train}")
 
-    return df_train_set, df_validate_set, df_test_set
+            min_test = min(list_test)
+            max_test = max(list_test)
+            filter_test_temp = temp[(temp['year'] >= min_test) & (temp['year'] <= max_test)]
+            df_test = pd.concat([df_test, filter_test_temp])
+
+            min_validate = min(list_validate)
+            max_validate = max(list_validate)
+            filter_validate_temp = temp[(temp['year'] >= min_validate) & (temp['year'] <= max_validate)]
+            df_validate = pd.concat([df_validate, filter_validate_temp])
+
+            min_train = min(list_train)
+            max_train = max(list_train)
+            filter_train_temp = temp[(temp['year'] >= min_train) & (temp['year'] <= max_train)]
+            df_train = pd.concat([df_train, filter_train_temp])
+        else:
+            test_df = temp.copy()
+            len_df = len(test_df.index)
+            num_test = math.ceil(len_df*0.2)
+            num_validate = math.ceil(len_df*0.2)
+            filter_test_temp = test_df[num_test*-1:]
+            test_df = test_df[:len(test_df)-num_test]
+            filter_validate_temp = test_df[num_validate*-1:]
+            test_df = test_df[:len(test_df)-num_validate]
+            filter_train_temp = test_df
+
+            df_train = pd.concat([df_train, filter_train_temp])
+            df_validate = pd.concat([df_validate, filter_validate_temp])
+            df_test = pd.concat([df_test, filter_test_temp])
+            
+    return df_train, df_validate, df_test
+       

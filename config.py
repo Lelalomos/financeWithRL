@@ -6,19 +6,7 @@ TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","
         "RDDT","BIDU","RTX","PINS","WBD","HSY","HPE","TM","GTLB","NOC","BILI","MDLZ","K","WIX","MSI","NVO","PVH","CDNA","BOX","ANF","AMBA",
         "S","BHP","TCOM","WDAY","INTU","NTES","A","SNPS","M","ADI","TJX","TGT","COTY","MDT","LOW","FN","EL","ZIM","GLOB", "EA", "RGTI"]
 
-not_use = ['DUOL',
- 'COIN',
- 'CFLT',
- 'SOFI',
- 'HIMS',
- 'JNJ',
- 'ARM',
- 'RBLX',
- 'RDDT',
- 'GTLB',
- 'S',
- 'ZIM',
- 'RGTI']
+
 # test
 # TICKET_LIST = ["GOOGL","MSFT","META","NFLX","RDDT","ABNB"]
 
