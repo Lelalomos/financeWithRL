@@ -6,14 +6,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import sys
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 sys.path.append("/app")
 
 from model.model import LSTMModel, LSTMModelwithAttention
 import config
 import os
+from datetime import datetime
 
-torch.cuda.empty_cache() 
+torch.cuda.empty_cache()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # torch.cuda.synchronize()
 # torch.backends.cudnn.enabled = False
@@ -43,6 +44,7 @@ class train_lstm:
         self.list_loss = []
         self.path_save_loss = path_save_loss
         self.path_save_model = path_save_model
+        self.lstm_model = None
         
     
     def train(self, train_X, train_Y, stock_id, group_id, day_id, month_id, feature_dim, num_stocks, num_group, num_day, num_month):
@@ -64,7 +66,7 @@ class train_lstm:
         train_dataset = TensorDataset(train_X, stock_tensor, group_tensor, month_tensor, day_tensor, train_Y)
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=self.shuffle_train)
         if config.MODEL == "lstm":
-            lstm_model = LSTMModel(
+            self.lstm_model = LSTMModel(
                 feature_dim,
                 num_stocks,
                 num_group,
@@ -73,7 +75,7 @@ class train_lstm:
                 config
             ).to(self.device)
         elif config.MODEL == "lstm_with_attention":
-            lstm_model = LSTMModelwithAttention(
+            self.lstm_model = LSTMModelwithAttention(
                 feature_dim,
                 num_stocks,
                 num_group,
@@ -82,7 +84,7 @@ class train_lstm:
                 config
             ).to(self.device)
 
-        optimizer = torch.optim.Adam(lstm_model.parameters(), lr=0.001)
+        optimizer = torch.optim.Adam(self.lstm_model.parameters(), lr=0.001)
         criterion = nn.HuberLoss(delta=config.LSTM_PARAMS['delta'])
         
         # print("-"*20,"Model","-"*20)
@@ -96,7 +98,7 @@ class train_lstm:
             for inputs, stock_tensor, group_tensor, month_tensor, day_tensor, labels in train_loader:
                 optimizer.zero_grad()
                 inputs, stock_tensor, group_tensor, month_tensor, day_tensor, labels = inputs.to(self.device), stock_tensor.to(self.device), group_tensor.to(self.device), month_tensor.to(self.device), day_tensor.to(self.device), labels.to(self.device)
-                outputs = lstm_model(stock_tensor, group_tensor, day_tensor, month_tensor, inputs)
+                outputs = self.lstm_model(stock_tensor, group_tensor, day_tensor, month_tensor, inputs)
 
                 # print("Checking for NaNs or infinities...")
                 # print(f"Model output has NaN: {torch.isnan(outputs).any()}")
@@ -112,66 +114,11 @@ class train_lstm:
                 if self.debug_loss:
                     if loss.item() < self.threshold_loss:
                         print(f'Loss is below threshold ({self.threshold_loss}), saving the model...')
-                        torch.save(lstm_model.state_dict(), 'model.pth')
+                        torch.save(self.lstm_model.state_dict(), 'model.pth')
                         break
 
             avg_loss = val_loss / len(train_loader)
             print(f"Epoch [{epoch+1}/{self.epochs}], Loss: {avg_loss:.4f}")
-
-        
-    def eval(self, test_X, test_Y, stock_id, group_id, day_id, month_id, feature_dim, num_stocks, num_group, num_day, num_month):
-        test_X = torch.tensor(test_X.to_numpy(), dtype=torch.float32).to(self.device)
-        test_X = test_X.unsqueeze(1)
-        test_Y = torch.tensor(np.array(test_Y), dtype=torch.float32).to(self.device)
-        
-        stock_tensor = torch.tensor(stock_id, dtype=torch.long)
-        group_tensor = torch.tensor(group_id, dtype=torch.long)
-        month_tensor = torch.tensor(month_id, dtype=torch.long)
-        day_tensor = torch.tensor(day_id, dtype=torch.long)
-
-        stock_tensor = stock_tensor.unsqueeze(1)
-        group_tensor = group_tensor.unsqueeze(1)
-        month_tensor = month_tensor.unsqueeze(1)
-        day_tensor = day_tensor.unsqueeze(1)
-        
-        lstm_model = LSTMModel(feature_dim,
-            num_stocks,
-            num_group,
-            num_day,
-            num_month,
-            config).to(self.device)
-        
-        test_dataset = TensorDataset(test_X, stock_tensor, group_tensor, month_tensor, day_tensor, test_Y)
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=self.shuffle_test)
-        
-        # Test the model
-        lstm_model.eval()
-        test_loss = 0
-        predictions, actuals = [], []
-        criterion = nn.HuberLoss(delta=config.LSTM_PARAMS['delta'])
-        with torch.no_grad():
-            for inputs, stock_tensor, group_tensor, month_tensor, day_tensor, labels in test_loader:
-                inputs, stock_tensor, group_tensor, month_tensor, day_tensor, labels = inputs.to(self.device), stock_tensor.to(self.device), group_tensor.to(self.device), month_tensor.to(self.device), day_tensor.to(self.device), labels.to(self.device)
-                outputs = lstm_model(stock_tensor, group_tensor, day_tensor, month_tensor, inputs)
-                loss = criterion(outputs, labels)
-                test_loss += loss.item()
-
-                predictions.append(outputs.cpu().numpy())
-                actuals.append(labels.cpu().numpy())
-
-        predictions = np.concatenate(predictions, axis=0)
-        actuals = np.concatenate(actuals, axis=0)
-
-        mse = mean_squared_error(actuals, predictions)
-        rmse = np.sqrt(mse)
-        mae = mean_absolute_error(actuals, predictions)
-        r2 = r2_score(actuals, predictions)
-        
-        print(f"Evaluation Results:")
-        print(f"  MSE  : {mse:.6f}")
-        print(f"  RMSE : {rmse:.6f}")
-        print(f"  MAE  : {mae:.6f}")
-        print(f"  R²   : {r2:.6f}")
             
         
     def plot_image(self, save_image):
@@ -182,14 +129,10 @@ class train_lstm:
         plt.savefig(save_image)  # Save the plot as an image file
         plt.close()
     
-    def export_model(self, save_model):
-        torch.save(self.model.state_dict(), save_model)
-        
+    def export_model(self):
+        torch.save(self.lstm_model.state_dict(), self.path_save_model)
 
-if __name__ == "__main__":
-    # print("config f",config.LSTM_PARAMS)
-    # prepare data
-    df_train = pd.read_parquet(os.path.join(os.getcwd(),"data","train_dataset.parquet"))
+def train_lstm(df_train = pd.read_parquet(os.path.join(os.getcwd(),"data","train_dataset.parquet"))):
     num_stocks = len(df_train['tic_id'].unique())
     num_group = len(df_train['group_id'].unique())
     num_month = len(df_train['month'].unique())+1
@@ -208,7 +151,11 @@ if __name__ == "__main__":
     month_tensor = df_train['month'].astype(int).to_list()
     day_tensor = df_train['day'].astype(int).to_list()
 
-    lstm = train_lstm(epochs=10)
+    today = datetime.today()
+    ymd = today.strftime("%Y%m%d")
+    lstm = train_lstm(epochs=10, path_save_model = os.path.join(os.getcwd(),'saved_model',f'{ymd}_lstm_model.pth'))
     lstm.train(X_val, y_val, stock_tensor, group_tensor, day_tensor, month_tensor, feature_dim, num_stocks, num_group, num_day, num_month)
+    lstm.export_model()
 
-    
+if __name__ == "__main__":
+    train_lstm()
