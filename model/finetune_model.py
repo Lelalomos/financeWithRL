@@ -51,7 +51,6 @@ def objective(trial):
     dataset = TensorDataset(feature_data,stock_tensor, group_tensor, month_tensor, day_tensor, feature_label)
     val_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
-    output_size = trial.suggest_int("output_size", 64, 256)
     embedding_dim_stock = trial.suggest_int("embedding_dim_stock", num_stocks,num_stocks*2)
     embedding_dim_group = trial.suggest_int("embedding_dim_group", num_group, num_group*2)
     embedding_dim_day = trial.suggest_int("embedding_dim_day", num_day, num_day*2)
@@ -72,7 +71,7 @@ def objective(trial):
 
     # สร้างโมเดล LSTM
     if config.MODEL == "lstm":
-        lstm_model = LSTMModel_HYPER(output_size,
+        lstm_model = LSTMModel_HYPER(
                                 num_stocks,
                                 num_group,
                                 num_day,
@@ -93,7 +92,6 @@ def objective(trial):
                                 num_bilstm).to(device)
     elif config.MODEL == "lstm_with_attention":
         lstm_model = LSTMModelwithAttention_HYPER(
-            output_size,
             num_stocks,
             num_group,
             num_day,
@@ -133,7 +131,7 @@ def objective(trial):
             val_loss += loss.item()
 
         avg_loss = val_loss / len(val_loader)
-        print(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}")
+        print(f"Loss: {avg_loss:.4f}")
 
         return loss.item()
 
@@ -142,7 +140,7 @@ if __name__ == "__main__":
 
     # เริ่มต้น Optuna study
     study = optuna.create_study(direction="minimize", pruner=optuna.pruners.MedianPruner(n_warmup_steps=10))
-    study.optimize(objective, n_trials=500)  # ทดลอง 20 รอบ
+    study.optimize(objective, n_trials=200)  # ทดลอง 20 รอบ
 
     history_df = study.trials_dataframe()
 

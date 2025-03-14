@@ -2,11 +2,13 @@ import torch
 import torch.nn as nn
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
+# from sklearn.preprocessing import MinMaxScaler
 import sys
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+import numpy as np
 
 sys.path.append("/app")
 from model.model import LSTMModel, LSTMModelwithAttention
@@ -76,9 +78,16 @@ class evaluate_model:
                 actuals.append(labels.cpu().numpy())
 
         predictions = np.concatenate(predictions, axis=0)
+        predictions = np.nan_to_num(predictions, nan=0)
         actuals = np.concatenate(actuals, axis=0)
+        actuals = np.nan_to_num(actuals, nan=0)
 
-        print(f"predictions: {predictions[0]}")
+        df = pd.DataFrame(np.hstack((predictions, actuals)), columns=['predictions', 'actuals'])
+        df.to_excel("data_evaluate.xlsx")
+
+        print("shape predictions:",predictions.shape)
+        print("shape actuals:",actuals.shape)
+        print(f"predictions: {predictions}")
         print(f"actuals: {actuals[0]}")
 
         mse = mean_squared_error(actuals, predictions)
@@ -116,4 +125,4 @@ def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.ge
             
 
 if __name__ == "__main__":
-    evaluate_lstm("saved_model/20250313_lstm_model.pth")
+    evaluate_lstm("saved_model/20250315_lstm_model.pth")

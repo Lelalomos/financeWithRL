@@ -112,7 +112,7 @@ class LSTMModel(nn.Module):
         self.lstm2 = nn.LSTM(config["first_layer_hidden_size"], config['second_layer_hidden_size'], config['second_layer_size'], batch_first=True)
         self.lstm3 = nn.LSTM(config['second_layer_hidden_size'], config['third_layer_hidden_size'], config['third_layer_size'], batch_first=True)
         self.dropout = nn.Dropout(config['dropout'])
-        self.fc = nn.Linear(config["third_layer_hidden_size"], config['output_size'])
+        self.fc = nn.Linear(config["third_layer_hidden_size"], 1)
 
     def forward(self, stock_name, group_name, day_name, month_name, feature):
         stock_emb = self.stock_embedding(stock_name)
@@ -138,7 +138,7 @@ class LSTMModel(nn.Module):
 
 # Define the LSTM model
 class LSTMModel_HYPER(nn.Module):
-    def __init__(self, output_size, 
+    def __init__(self,
                  num_stocks, 
                  num_group, 
                  num_day, 
@@ -181,7 +181,7 @@ class LSTMModel_HYPER(nn.Module):
         self.dropout = nn.Dropout(dropout_value)
         
 
-        self.fc = nn.Linear(third_layer_hidden_size*2, output_size)
+        self.fc = nn.Linear(third_layer_hidden_size*2, 1)
         # print('finish init')
 
     def forward(self, stock_name, group_name, day_name, month_name, feature):
@@ -239,7 +239,8 @@ class LSTMModelwithAttention(nn.Module):
 
         self.dropout = nn.Dropout(config['dropout'])
         
-        self.fc = nn.Linear(config['attent_hidden_size'], config['output_size'])
+        self.fc = nn.Linear(config['attent_hidden_size'], 1)
+        self.softsign = nn.Softsign()
 
     def forward(self, stock_name, group_name, day_name, month_name, feature):
         stock_emb = self.stock_embedding(stock_name)
@@ -265,10 +266,12 @@ class LSTMModelwithAttention(nn.Module):
 
         fc_out = self.fc(out1)
         # print("fc_out:",fc_out)
-        return torch.tanh(fc_out)
+        # return torch.tanh(fc_out)
+        # return self.softsign(fc_out)
+        return fc_out
 
 class LSTMModelwithAttention_HYPER(nn.Module):
-    def __init__(self, output_size, 
+    def __init__(self,
                  num_stocks, 
                  num_group, 
                  num_day, 
@@ -317,7 +320,8 @@ class LSTMModelwithAttention_HYPER(nn.Module):
         self.dropout = nn.Dropout(dropout_value)
         
 
-        self.fc = nn.Linear(attent_hidden_size, output_size)
+        self.fc = nn.Linear(attent_hidden_size, 1)
+        self.softsign = nn.Softsign()
         # print('finish init')
 
     def forward(self, stock_name, group_name, day_name, month_name, feature):
@@ -346,13 +350,16 @@ class LSTMModelwithAttention_HYPER(nn.Module):
 
         fc_out = self.fc(out1)
         # print("fc_out:",fc_out)
-        return torch.tanh(fc_out)
+        # return torch.tanh(fc_out)
+        # return self.softsign(fc_out)
+        return fc_out
     
 class AttentionLayer(nn.Module):
     def __init__(self, input_size, attention_size):
         super(AttentionLayer, self).__init__()
         self.query_linear = nn.Linear(input_size, attention_size)
         self.tanh = nn.Tanh()
+        self.softsign = nn.Softsign()
         self.key_linear = nn.Linear(input_size, attention_size)
         self.value_linear = nn.Linear(input_size, attention_size)
 
@@ -363,7 +370,7 @@ class AttentionLayer(nn.Module):
 
         attention_scores = torch.bmm(Q, K.transpose(1, 2))  # Q * K^T
         attention_scores = attention_scores / (K.size(-1) ** 0.5)  # Scaling
-        attention_scores = self.tanh(attention_scores)
+        # attention_scores = self.tanh(attention_scores)
         attention_weights =  F.softmax(attention_scores, dim=-1)  # Softmax
         
         # Weighted sum of values to produce context vector
