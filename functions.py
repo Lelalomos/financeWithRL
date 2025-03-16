@@ -313,4 +313,48 @@ def split_dataset(df, test_ratio=0.06, validate_ratio = 0.06):
             df_test = pd.concat([df_test, filter_test_temp])
             
     return df_train, df_validate, df_test
+
+def split_realdata(df, test_ratio=0.06):
+    today = datetime.today()
+    df_test = pd.DataFrame(dtype=str)
+    df_train = pd.DataFrame(dtype=str)
+
+    # df['Date'] = pd.to_datetime(df['Date'])
+    for tic in list(df['tic_id'].unique()):
+        print(tic)
+        temp = df[df['tic_id'] == tic]
+        temp['year'] = temp['year'].astype('int')
+        list_year = list(temp['year'].unique())
+        list_year = [y for y in list_year if str(y) != str(today.year)]
+        len_year = len(list_year)
+        print(f"list_date: {list_year}")
+        if len_year > 2:
+            num_test = math.ceil(len_year*test_ratio)
+            list_test = list_year[int(num_test)*-1:]
+            list_train = list_year[:int(num_test)*-1]
+
+            print(f"list_test:{list_test}")
+            print(f"list_train: {list_train}")
+
+            min_test = min(list_test)
+            max_test = max(list_test)
+            filter_test_temp = temp[(temp['year'] >= min_test) & (temp['year'] <= max_test)]
+            df_test = pd.concat([df_test, filter_test_temp])
+
+            min_train = min(list_train)
+            max_train = max(list_train)
+            filter_train_temp = temp[(temp['year'] >= min_train) & (temp['year'] <= max_train)]
+            df_train = pd.concat([df_train, filter_train_temp])
+        else:
+            test_df = temp.copy()
+            len_df = len(test_df.index)
+            num_test = math.ceil(len_df*0.2)
+            filter_test_temp = test_df[num_test*-1:]
+            test_df = test_df[:len(test_df)-num_test]
+            filter_train_temp = test_df
+
+            df_train = pd.concat([df_train, filter_train_temp])
+            df_test = pd.concat([df_test, filter_test_temp])
+            
+    return df_train, df_test
        

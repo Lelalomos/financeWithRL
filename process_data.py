@@ -1,5 +1,5 @@
 from utils import return_logs, prepare_data, normalization_data
-from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int, split_dataset
+from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int, split_dataset, split_realdata
 import os
 import pandas as pd
 import numpy as np
@@ -61,12 +61,24 @@ def main():
     data = data.sort_values(by=["Date", "tic"])
 
     # make label
-    data["pre_7"] = data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
-    data["pre_7"] = np.tanh(data["pre_7"] / 100) * 100
-    data["pre_7"] = data["pre_7"].fillna(method="bfill", limit=7)
+    cal_pre = pd.DataFrame(dtype=str)
+    for tic in config.TICKET_LIST:
+        temp_data = data[data['tic'] == tic]
+        temp_data["pre_7"] = temp_data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
+        temp_data["pre_7"] = np.tanh(temp_data["pre_7"] / 100) * 100
+        temp_data["pre_7"] = temp_data["pre_7"].fillna(method="bfill", limit=7)
+
+        cal_pre = pd.concat([cal_pre,temp_data])
+
+    cal_pre = cal_pre.sort_values(by=["Date", "tic"])
+
+
+    # data["pre_7"] = data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
+    # data["pre_7"] = np.tanh(data["pre_7"] / 100) * 100
+    # data["pre_7"] = data["pre_7"].fillna(method="bfill", limit=7)
 
     # grouping sector in stock
-    group_sector = groupping_stock(data, config)
+    group_sector = groupping_stock(cal_pre, config)
     group_sector = group_sector.sort_values(by=["Date", "tic"])
     group_sector = convert_string2int(group_sector)
 
@@ -100,6 +112,13 @@ def main():
     # ต้องเพิ่ม label ว่าต้องการแบบไหน
     # split train, validate, test
     train_set, validate_set, test_set = split_dataset(group_sector)
+    real_train_dataset, real_test_dataset = split_realdata(group_sector)
+
+    real_train_dataset = real_train_dataset.drop(["year"],axis=1)
+    real_test_dataset = real_test_dataset.drop(["year"],axis=1)
+
+    real_test_dataset.to_parquet(os.path.join(os.getcwd(),"data","real_test_dataset.parquet"))
+    real_train_dataset.to_parquet(os.path.join(os.getcwd(),"data","real_train_dataset.parquet"))
 
     validate_set = validate_set.drop(["year"],axis=1)
     test_set = test_set.drop(["year"],axis=1)

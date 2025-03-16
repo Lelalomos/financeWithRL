@@ -84,7 +84,7 @@ class train_lstm:
                 config
             ).to(self.device)
 
-        optimizer = torch.optim.Adam(self.lstm_model.parameters(), lr=0.001)
+        optimizer = torch.optim.Adam(self.lstm_model.parameters(),lr=0.0001)
         criterion = nn.HuberLoss(delta=config.LSTM_PARAMS['delta'])
         
         # print("-"*20,"Model","-"*20)
@@ -132,7 +132,7 @@ class train_lstm:
     def export_model(self):
         torch.save(self.lstm_model.state_dict(), self.path_save_model)
 
-def train_lstm_func(df_train = pd.read_parquet(os.path.join(os.getcwd(),"data","train_dataset.parquet"))):
+def train_lstm_func(df_train = pd.read_parquet(os.path.join(os.getcwd(),"data","real_train_dataset.parquet"))):
     num_stocks = len(df_train['tic_id'].unique())
     num_group = len(df_train['group_id'].unique())
     num_month = len(df_train['month'].unique())+1
@@ -145,6 +145,7 @@ def train_lstm_func(df_train = pd.read_parquet(os.path.join(os.getcwd(),"data","
     print(f"X_val: {X_val.columns}")
     feature_dim = len(X_val.columns)
     print(f"feature_dim: {feature_dim}")
+    print("y_val:",y_val)
 
     stock_tensor = df_train['tic_id'].astype(int).to_list()
     group_tensor = df_train['group_id'].astype(int).to_list()
@@ -153,7 +154,7 @@ def train_lstm_func(df_train = pd.read_parquet(os.path.join(os.getcwd(),"data","
 
     today = datetime.today()
     ymd = today.strftime("%Y%m%d")
-    lstm = train_lstm(epochs=5, path_save_model = os.path.join(os.getcwd(),'saved_model',f'{ymd}_lstm_model.pth'))
+    lstm = train_lstm(epochs=500, batch_size = 256, path_save_model = os.path.join(os.getcwd(),'saved_model',f'{ymd}_lstm_model.pth'))
     lstm.train(X_val, y_val, stock_tensor, group_tensor, day_tensor, month_tensor, feature_dim, num_stocks, num_group, num_day, num_month)
     lstm.export_model()
 

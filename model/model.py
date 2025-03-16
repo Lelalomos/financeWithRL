@@ -108,9 +108,9 @@ class LSTMModel(nn.Module):
 
         input_dim = config['embedding_dim_stock'] + config['embedding_dim_group'] + config['embedding_dim_day'] + config['embedding_dim_month'] + feature_dim
         self.batch_norm_input = nn.BatchNorm1d(input_dim)
-        self.lstm1 = nn.LSTM(input_dim, config['first_layer_hidden_size'], config['first_layer_size'], batch_first=True)
-        self.lstm2 = nn.LSTM(config["first_layer_hidden_size"], config['second_layer_hidden_size'], config['second_layer_size'], batch_first=True)
-        self.lstm3 = nn.LSTM(config['second_layer_hidden_size'], config['third_layer_hidden_size'], config['third_layer_size'], batch_first=True)
+        self.lstm1 = nn.LSTM(input_dim, config['first_layer_hidden_size'], 1, batch_first=True)
+        self.lstm2 = nn.LSTM(config["first_layer_hidden_size"], config['second_layer_hidden_size'], 1, batch_first=True)
+        self.lstm3 = nn.LSTM(config['second_layer_hidden_size'], config['third_layer_hidden_size'], 1, batch_first=True)
         self.dropout = nn.Dropout(config['dropout'])
         self.fc = nn.Linear(config["third_layer_hidden_size"], 1)
 
@@ -133,7 +133,7 @@ class LSTMModel(nn.Module):
         lstm_out3, _ = self.lstm3(lstm_out21)
         out1 = self.dropout(lstm_out3)
         fc_out = self.fc(out1)
-        return torch.tanh(fc_out)
+        return fc_out
     
 
 # Define the LSTM model
@@ -149,14 +149,10 @@ class LSTMModel_HYPER(nn.Module):
                  embedding_dim_month,
                  feature_dim,
                  first_layer_hidden_size,
-                 first_layer_size,
                  second_layer_hidden_size,
-                 second_layer_size,
                  third_layer_hidden_size,
-                 third_layer_size,
                  dropout_value,
-                 hidden_bilstm,
-                 num_bilstm):
+                 hidden_bilstm):
         super().__init__()
 
         # print("num_stocks:",num_stocks)
@@ -171,13 +167,13 @@ class LSTMModel_HYPER(nn.Module):
 
         
         input_dim = embedding_dim_stock + embedding_dim_group + embedding_dim_day+ embedding_dim_month+ feature_dim
-        self.bilstm = nn.LSTM(input_dim, hidden_bilstm, num_bilstm, batch_first=True, bidirectional=True)
+        self.bilstm = nn.LSTM(input_dim, hidden_bilstm, 1, batch_first=True, bidirectional=True)
         self.batch_norm_input = nn.BatchNorm1d(hidden_bilstm*2)
 
-        self.lstm1 = nn.LSTM(hidden_bilstm*2, first_layer_hidden_size, first_layer_size, batch_first=True, bidirectional=True)
-        self.lstm2 = nn.LSTM(first_layer_hidden_size*2, second_layer_hidden_size, second_layer_size, batch_first=True, bidirectional=True)
+        self.lstm1 = nn.LSTM(hidden_bilstm*2, first_layer_hidden_size, 1, batch_first=True, bidirectional=True)
+        self.lstm2 = nn.LSTM(first_layer_hidden_size*2, second_layer_hidden_size, 1, batch_first=True, bidirectional=True)
         print("input_dim:",input_dim)
-        self.lstm3 = nn.LSTM(second_layer_hidden_size*2, third_layer_hidden_size, third_layer_size, batch_first=True, bidirectional=True)
+        self.lstm3 = nn.LSTM(second_layer_hidden_size*2, third_layer_hidden_size, 1, batch_first=True, bidirectional=True)
         self.dropout = nn.Dropout(dropout_value)
         
 
@@ -206,7 +202,7 @@ class LSTMModel_HYPER(nn.Module):
 
         fc_out = self.fc(out1)
         # print("fc_out:",fc_out)
-        return torch.tanh(fc_out)
+        return fc_out
     
 
 class LSTMModelwithAttention(nn.Module):
@@ -226,13 +222,13 @@ class LSTMModelwithAttention(nn.Module):
         self.month_embedding = nn.Embedding(num_month, config['embedding_dim_month'])
 
         input_dim = config["embedding_dim_stock"] + config['embedding_dim_group'] + config['embedding_dim_day']+ config['embedding_dim_month'] + feature_dim
-        self.bilstm = nn.LSTM(input_dim, config['hidden_bilstm'], config["num_bilstm"], batch_first=True, bidirectional=True)
+        self.bilstm = nn.LSTM(input_dim, config['hidden_bilstm'], 1, batch_first=True, bidirectional=True)
         self.batch_norm_input = nn.BatchNorm1d(config['hidden_bilstm']*2)
 
-        self.lstm1 = nn.LSTM(config['hidden_bilstm']*2, config['first_layer_hidden_size'], config['first_layer_size'], batch_first=True, bidirectional=True)
-        self.lstm2 = nn.LSTM(config['first_layer_hidden_size']*2, config['second_layer_hidden_size'], config['second_layer_size'], batch_first=True, bidirectional=True)
+        self.lstm1 = nn.LSTM(config['hidden_bilstm']*2, config['first_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        self.lstm2 = nn.LSTM(config['first_layer_hidden_size']*2, config['second_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
         print("input_dim:",input_dim)
-        self.lstm3 = nn.LSTM(config['second_layer_hidden_size']*2, config['third_layer_hidden_size'], config['third_layer_size'], batch_first=True, bidirectional=True)
+        self.lstm3 = nn.LSTM(config['second_layer_hidden_size']*2, config['third_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
         print("before attention")
         self.attention = AttentionLayer(config['third_layer_hidden_size'] * 2, config['attent_hidden_size'])
         print("after attention")
@@ -251,9 +247,9 @@ class LSTMModelwithAttention(nn.Module):
         combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
         
         combind_input, _ = self.bilstm(combind_input)
-        combind_input = combind_input[:, -1, :]
-        combind_input = self.batch_norm_input(combind_input)
-        combind_input = combind_input.unsqueeze(1)
+        # combind_input = combind_input[:, -1, :]
+        # combind_input = self.batch_norm_input(combind_input)
+        # combind_input = combind_input.unsqueeze(1)
         out, _ = self.lstm1(combind_input)
         lstm_out21, _ = self.lstm2(out)
         lstm_out3, _ = self.lstm3(lstm_out21)
@@ -282,14 +278,10 @@ class LSTMModelwithAttention_HYPER(nn.Module):
                  embedding_dim_month,
                  feature_dim,
                  first_layer_hidden_size,
-                 first_layer_size,
                  second_layer_hidden_size,
-                 second_layer_size,
                  third_layer_hidden_size,
-                 third_layer_size,
                  dropout_value,
                  hidden_bilstm,
-                 num_bilstm,
                  attent_hidden_size):
         super().__init__()
 
@@ -306,13 +298,13 @@ class LSTMModelwithAttention_HYPER(nn.Module):
 
         
         input_dim = embedding_dim_stock + embedding_dim_group + embedding_dim_day+ embedding_dim_month+ feature_dim
-        self.bilstm = nn.LSTM(input_dim, hidden_bilstm, num_bilstm, batch_first=True, bidirectional=True)
+        self.bilstm = nn.LSTM(input_dim, hidden_bilstm, 1, batch_first=True, bidirectional=True)
         self.batch_norm_input = nn.BatchNorm1d(hidden_bilstm*2)
 
-        self.lstm1 = nn.LSTM(hidden_bilstm*2, first_layer_hidden_size, first_layer_size, batch_first=True, bidirectional=True)
-        self.lstm2 = nn.LSTM(first_layer_hidden_size*2, second_layer_hidden_size, second_layer_size, batch_first=True, bidirectional=True)
+        self.lstm1 = nn.LSTM(hidden_bilstm*2, first_layer_hidden_size, 1, batch_first=True, bidirectional=True)
+        self.lstm2 = nn.LSTM(first_layer_hidden_size*2, second_layer_hidden_size, 1, batch_first=True, bidirectional=True)
         print("input_dim:",input_dim)
-        self.lstm3 = nn.LSTM(second_layer_hidden_size*2, third_layer_hidden_size, third_layer_size, batch_first=True, bidirectional=True)
+        self.lstm3 = nn.LSTM(second_layer_hidden_size*2, third_layer_hidden_size, 1, batch_first=True, bidirectional=True)
         print("before attention")
         self.attention = AttentionLayer(third_layer_hidden_size * 2, attent_hidden_size)
         print("after attention")
@@ -335,9 +327,9 @@ class LSTMModelwithAttention_HYPER(nn.Module):
 
         # print("out bi:",out)
         combind_input, _ = self.bilstm(combind_input)
-        combind_input = combind_input[:, -1, :]
-        combind_input = self.batch_norm_input(combind_input)
-        combind_input = combind_input.unsqueeze(1)
+        # combind_input = combind_input[:, -1, :]
+        # combind_input = self.batch_norm_input(combind_input)
+        # combind_input = combind_input.unsqueeze(1)
         out, _ = self.lstm1(combind_input)
         lstm_out21, _ = self.lstm2(out)
         lstm_out3, _ = self.lstm3(lstm_out21)

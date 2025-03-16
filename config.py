@@ -8,7 +8,7 @@ TICKET_LIST = ["AAPL","TSLA","NFLX","BNTX","AMZN","MSFT","META","NVDA","GOOGL","
 
 
 # test
-# TICKET_LIST = ["GOOGL","MSFT","META","NFLX","RDDT","ABNB"]
+# TICKET_LIST = ["GOOGL","MSFT"]
 
 COMMODITY = {
             'GC=F': 'Gold',
@@ -49,6 +49,7 @@ SECTOR_GROUP = {
 }
 
 MODEL = "lstm_with_attention"
+# MODEL = "lstm"
 
 WEIGHT_GROUP = {
     "software":1,
@@ -115,20 +116,16 @@ LSTM_PARAMS = {
     'delta': 0.10007115305567968
     }
 
+# test
 LSTM_ATTENTION_PARAMS = {
-    'output_size': 101, 
-    'embedding_dim_stock': 186, 
-    'embedding_dim_group': 44, 
-    'embedding_dim_day': 57, 
-    'embedding_dim_month': 27, 
-    'hidden_bilstm': 193, 
-    'num_bilstm': 4, 
-    'first_layer_hidden_size': 96, 
-    'first_layer_size': 3, 
-    'second_layer_hidden_size': 415, 
-    'second_layer_size': 5, 
-    'third_layer_hidden_size': 145, 
-    'third_layer_size': 2, 
-    'dropout': 0.45539417658510856, 
-    'delta': 0.1273437916639349, 
-    'attent_hidden_size': 228}
+    'embedding_dim_stock': 206, 
+    'embedding_dim_group': 56, 
+    'embedding_dim_day': 33, 
+    'embedding_dim_month': 16,
+    'hidden_bilstm': 128, 
+    'first_layer_hidden_size': 256, 
+    'second_layer_hidden_size': 512, 
+    'third_layer_hidden_size': 256,
+    'dropout': 0.4856366310103994, 
+    'delta': 0.11409627325310476, 
+    'attent_hidden_size': 128}
