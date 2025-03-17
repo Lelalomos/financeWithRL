@@ -1,1 +1,11 @@
 /ta-lib
+*.pyc
+/data
+/saved_model
+*.xlsx
+*.csv
+*.png
+*.jpeg
+*.pth
+*.log
+*.ipynb
