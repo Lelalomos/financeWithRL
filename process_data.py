@@ -19,11 +19,6 @@ def main():
     logging = return_logs(os.path.join(os.getcwd(),'logs','process.log'))
     
     logging.info("pull data from yahoo")
-    # pull data
-    # if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
-    #     data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
-    # else:
-        # download data
     if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
         data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
     else:
@@ -61,24 +56,24 @@ def main():
     data = data.sort_values(by=["Date", "tic"])
 
     # make label
-    cal_pre = pd.DataFrame(dtype=str)
-    for tic in config.TICKET_LIST:
-        temp_data = data[data['tic'] == tic]
-        temp_data["pre_7"] = temp_data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
-        temp_data["pre_7"] = np.tanh(temp_data["pre_7"] / 100) * 100
-        temp_data["pre_7"] = temp_data["pre_7"].fillna(method="bfill", limit=7)
+    # cal_pre = pd.DataFrame(dtype=str)
+    # for tic in config.TICKET_LIST:
+    #     temp_data = data[data['tic'] == tic]
+    #     temp_data["pre_7"] = temp_data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
+    #     temp_data["pre_7"] = np.tanh(temp_data["pre_7"] / 100) * 100
+    #     temp_data["pre_7"] = temp_data["pre_7"].fillna(method="bfill", limit=7)
 
-        cal_pre = pd.concat([cal_pre,temp_data])
+    #     cal_pre = pd.concat([cal_pre,temp_data])
 
-    cal_pre = cal_pre.sort_values(by=["Date", "tic"])
+    # cal_pre = cal_pre.sort_values(by=["Date", "tic"])
 
 
-    # data["pre_7"] = data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
-    # data["pre_7"] = np.tanh(data["pre_7"] / 100) * 100
-    # data["pre_7"] = data["pre_7"].fillna(method="bfill", limit=7)
+    data["pre_7"] = data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
+    data["pre_7"] = np.tanh(data["pre_7"] / 100) * 100
+    data["pre_7"] = data["pre_7"].fillna(method="bfill", limit=7)
 
     # grouping sector in stock
-    group_sector = groupping_stock(cal_pre, config)
+    group_sector = groupping_stock(data, config)
     group_sector = group_sector.sort_values(by=["Date", "tic"])
     group_sector = convert_string2int(group_sector)
 

@@ -210,9 +210,19 @@ def groupping_stock(data, config):
     return df_all
 
 def convert_string2int(data, list_column=['group','tic']):
-    stock_encoder = LabelEncoder()
+    dict_data = {}
     for column in list_column:
-        data[f"{column}_id"] = stock_encoder.fit_transform(data[column])
+        stock_encoder = LabelEncoder()
+        stock_encoder.fit(data[column])
+        data[f"{column}_id"] = stock_encoder.transform(data[column])
+        decoded_values = stock_encoder.inverse_transform(data[f"{column}_id"])
+        dict_data[f'{column}_label'] = data[f"{column}_id"].to_list()
+        dict_data[f'{column}_str'] = decoded_values
+    
+    df = pd.DataFrame(dict_data)
+    df.to_excel("inpret.xlsx")
+    print("Decoded:", decoded_values)
+
     data = data.drop(columns=list_column,axis =1)
     return data
         
