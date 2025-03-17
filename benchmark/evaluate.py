@@ -102,7 +102,7 @@ class evaluate_model:
         print(f"  R²   : {r2:.6f}")
 
 
-def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.getcwd(),"data","test_dataset.parquet"))):
+def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.getcwd(),"data","real_test_dataset.parquet"))):
     num_stocks = len(df_test['tic_id'].unique())
     num_group = len(df_test['group_id'].unique())
     num_month = len(df_test['month'].unique())+1
@@ -125,4 +125,4 @@ def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.ge
             
 
 if __name__ == "__main__":
-    evaluate_lstm("saved_model/20250315_lstm_model.pth")
+    evaluate_lstm("saved_model/20250316_lstm_200_model.pth")
