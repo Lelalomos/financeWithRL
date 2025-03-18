@@ -9,6 +9,7 @@ import config
 from model.model import LSTMModel, LSTMModelwithAttention
 import torch
 import os
+from datetime import datetime
 
 class backtest:
     def __init__(self):
@@ -117,14 +118,14 @@ class backtest:
             month_tensor = month_tensor.to(self.device)
             X_val = X_val.to(self.device)
             outputs = lstm_model(stock_tensor, group_tensor, day_tensor, month_tensor, X_val)
-            print(outputs)
+            # print(outputs)
 
         print(y_val)
         df = pd.DataFrame(np.hstack((outputs.cpu().numpy(), y_val, month_tensor.cpu().numpy(), day_tensor.cpu().numpy(), group_tensor.cpu().numpy(), stock_tensor.cpu().numpy())), columns=['predictions', 'actuals', 'month', 'day', 'group','stock'])
         df.to_excel("backtest.xlsx")
         # print("Predicted Value:", outputs.item())
 
-        return outputs
+        return df
 
 
 if __name__ == "__main__":
@@ -135,8 +136,27 @@ if __name__ == "__main__":
         data = bk.prepare_data('2025-01-01','2025-02-01')
         data.to_parquet("data/test_real.parquet")
 
-    # output = bk.test(data, "saved_model/20250316_lstm_200_model.pth")
-    # print(output)
+    os.makedirs(os.path.join(os.getcwd(),'output'),exist_ok=True)
+    output = bk.test(data, "saved_model/20250316_lstm_200_model.pth")
+    today = datetime.today()
+    ymd = today.strftime("%Y%m%d-%H%M%S")
+    path_output = os.path.join(os.getcwd(),'output',f'backtest-{ymd}.xlsx')
+    output.to_excel(path_output)
+
+    # read map data
+    mapping_df = pd.read_excel("interpret.xlsx",dtype=str,index_col=0)
+    tic_mapping = mapping_df.groupby("tic_label")["tic_str"].apply(lambda x: list(set(x))[0]).to_dict()
+    group_mapping = mapping_df.groupby("group_label")["group_str"].apply(lambda x: list(set(x))[0]).to_dict()
+    # print(f"tic_mapping: {tic_mapping}")
+
+    output = pd.read_excel(path_output, index_col=0, dtype=str)
+    output = output.reset_index()
+    output["stock_name"] = output["stock"].map(tic_mapping)
+    output["group_name"] = output["group"].map(group_mapping)
+    output = output.drop(['stock','group'], axis=1)
+
+    output.to_excel(os.path.join(os.getcwd(),'output',f"result-{ymd}.xlsx"))
+
 
 
         

@@ -220,8 +220,7 @@ def convert_string2int(data, list_column=['group','tic']):
         dict_data[f'{column}_str'] = decoded_values
     
     df = pd.DataFrame(dict_data)
-    df.to_excel("inpret.xlsx")
-    print("Decoded:", decoded_values)
+    df.to_excel("interpret.xlsx")
 
     data = data.drop(columns=list_column,axis =1)
     return data
