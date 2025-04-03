@@ -154,7 +154,7 @@ def train_lstm_func(df_train = pd.read_parquet(os.path.join(os.getcwd(),"data","
 
     today = datetime.today()
     ymd = today.strftime("%Y%m%d")
-    lstm = train_lstm(epochs=500, batch_size = 256, path_save_model = os.path.join(os.getcwd(),'saved_model',f'{ymd}_lstm_model.pth'))
+    lstm = train_lstm(epochs=250, batch_size = 512, path_save_model = os.path.join(os.getcwd(),'saved_model',f'{ymd}_lstm_model.pth'))
     lstm.train(X_val, y_val, stock_tensor, group_tensor, day_tensor, month_tensor, feature_dim, num_stocks, num_group, num_day, num_month)
     lstm.export_model()
 

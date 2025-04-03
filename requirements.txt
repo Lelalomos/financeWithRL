@@ -10,4 +10,5 @@ pyarrow
 seaborn
 numpy==1.26.4
 optuna
+prophet
 

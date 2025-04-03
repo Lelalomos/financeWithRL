@@ -120,7 +120,7 @@ def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.ge
     day_tensor = df_test['day'].astype(int).to_list()
 
     if model_name is not None:
-        eval_model = evaluate_model(model_name=model_name)
+        eval_model = evaluate_model(model_name=model_name, batch_size=512)
         eval_model.evaluate(X_val, y_val, stock_tensor, group_tensor, day_tensor, month_tensor, feature_dim, num_stocks, num_group, num_day, num_month)
             
 
