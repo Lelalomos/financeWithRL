@@ -18,7 +18,7 @@ class prophet_model:
         ymd = today.strftime("%Y%m%d")
 
         if save_model:
-            joblib.dump(self.prophet, os.path.join()f"prophet-model-{ymd}.pkl")
+            joblib.dump(self.prophet, os.path.join(),f"prophet-model-{ymd}.pkl")
 
         return self.prophet
 
