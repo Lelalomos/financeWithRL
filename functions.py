@@ -1,4 +1,3 @@
-from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import torch
@@ -6,9 +5,9 @@ from model import  LSTMModel
 import pandas as pd
 import talib
 import config
-from pipe import dedup
 from datetime import datetime
 import math
+from scipy.signal import argrelextrema
 
 def search_null_value(df):
     columns_with_null = df.columns[df.isnull().any()]
@@ -366,4 +365,89 @@ def split_realdata(df, test_ratio=0.06):
             df_test = pd.concat([df_test, filter_test_temp])
             
     return df_train, df_test
+
+# wave
+def get_zigzag(df, percent=5):
+    price = df['Close'].values
+    highs = argrelextrema(price, np.greater, order=5)[0]
+    lows = argrelextrema(price, np.less, order=5)[0]
+    pivots = sorted(np.concatenate((highs, lows)))
+    pivots_filtered = [pivots[0]]
+    for i in range(1, len(pivots)):
+        change = abs((price[pivots[i]] - price[pivots_filtered[-1]]) / price[pivots_filtered[-1]]) * 100
+        if change >= percent:
+            pivots_filtered.append(pivots[i])
+    return pivots_filtered
+
+def classify_wave_structure(p1, p2, p3, p4, p5, prices):
+    v1, v2, v3, v4, v5 = prices[p1], prices[p2], prices[p3], prices[p4], prices[p5]
+    len1 = abs(v2 - v1)
+    len3 = abs(v3 - v2)
+    len5 = abs(v5 - v4)
+
+    # Rule 1: Wave 2 does not go below the start of Wave 1
+    if v2 < v1:
+        return None
+
+    # Rule 2: Wave 3 must not be the shortest
+    if not (len3 > len1 and len3 > len5):
+        return None
+
+    # Rule 3: Wave 4 does not overlap with Wave 1
+    if v4 < v1:
+        return None
+
+    # Rule 4: Wave 5 goes beyond Wave 3
+    if v5 <= v3:
+        return None
+
+    # Rule 5: Fibonacci guideline check for Wave 3 ~ 1.618 * Wave 1
+    if not np.isclose(len3 / len1, 1.618, atol=0.6):
+        return None
+
+    return 'impulse'
+
+def is_diagonal_wave(p1, p2, p3, p4, p5, prices, pivots):
+    v1, v2, v3, v4, v5 = prices[p1], prices[p2], prices[p3], prices[p4], prices[p5]
+    return (
+        v2 > v1 * 0.5 and
+        v4 < v1 and  # allow overlap
+        v5 > v3 and
+        all(abs(prices[pivots[i+1]] - prices[pivots[i]]) < 0.1 * prices[pivots[i]] for i in range(len(pivots)-1))
+    )
+
+def label_elliott_patterns(pivots, prices):
+    waves = {}
+    if len(pivots) < 6:
+        return waves
+
+    for i in range(len(pivots) - 5):
+        p1, p2, p3, p4, p5 = pivots[i:i+5]
+        wave_type = classify_wave_structure(p1, p2, p3, p4, p5, prices)
+
+        if wave_type:
+            waves[p1] = '1'
+            waves[p2] = '2'
+            waves[p3] = '3'
+            waves[p4] = '4'
+            waves[p5] = '5'
+        elif is_diagonal_wave(p1, p2, p3, p4, p5, prices, pivots):
+            waves[p1] = '1d'
+            waves[p2] = '2d'
+            waves[p3] = '3d'
+            waves[p4] = '4d'
+            waves[p5] = '5d'
+
+    # Try to detect simple ABC correction after the impulse
+    if len(pivots) >= 8:
+        for i in range(5, len(pivots) - 2):
+            a, b, c = pivots[i:i+3]
+            va, vb, vc = prices[a], prices[b], prices[c]
+            if va > vb < vc and vc < va:
+                waves[a] = 'A'
+                waves[b] = 'B'
+                waves[c] = 'C'
+
+    return waves
+
        

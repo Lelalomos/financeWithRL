@@ -5,9 +5,8 @@ import config
 from utils.logger import return_logs
 import os
 import yfinance as yf
-import traceback
 import pandas_datareader.data as web
-from functions import cal_rsi, cal_storsi, cal_ema
+from functions import cal_rsi, cal_storsi, cal_ema, get_zigzag, label_elliott_patterns
 import sys
 sys.path.append("/app")
 from stockstats.stockstats import StockDataFrame as Sdf
@@ -122,6 +121,22 @@ class prepare_data:
         bond_yields = bond_yields.rename(columns={'mean':'bondyield'})
         df_copy = pd.merge(df_copy, bond_yields, how="left", on="Date")
         return df_copy
+    
+    def add_elliott_wave(self, dataframe):
+        df_copy = dataframe.copy()
+        pivots = get_zigzag(df_copy, percent=5)
+        prices = df_copy['Close'].values
+        wave_labels = label_elliott_patterns(pivots, prices)
+
+        # Create a new column in df to store the Elliott Wave labels
+        df_copy['Elliott_Wave_Label'] = 0
+
+        # Assign wave labels to the corresponding rows in the DataFrame
+        for idx, label in wave_labels.items():
+            df_copy.at[idx, 'Elliott_Wave_Label'] = label
+
+        return df_copy
+
     
     def interpret_indicator(self, dataframe):
         # rsi
