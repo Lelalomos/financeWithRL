@@ -133,11 +133,11 @@ class prepare_data:
 
         # Assign wave labels to the corresponding rows in the DataFrame
         for idx, label in wave_labels.items():
-            df_copy.at[idx, 'Elliott_Wave_Label'] = label
+            new_label = config.MAP_EWAVE[label]
+            df_copy.at[idx, 'Elliott_Wave_Label'] = int(new_label)
 
         return df_copy
 
-    
     def interpret_indicator(self, dataframe):
         # rsi
         dataframe['rsi_14'] = dataframe['rsi_14']/100

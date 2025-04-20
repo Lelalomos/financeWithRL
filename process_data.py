@@ -31,6 +31,8 @@ def main():
     # filter tickle
     # data = data[~data['tic'].isin(list(config.not_use))]
 
+    data = pdata_func.add_elliott_wave(data)
+
     logging.info("prepare data")
     # clean data
     # data = pdata_func.pre_clean_data(data)
