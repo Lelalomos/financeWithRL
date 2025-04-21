@@ -8,7 +8,7 @@ import numpy as np
 import sys
 sys.path.append("/app")
 
-from model.model import LSTMModel, LSTMModelwithAttention
+from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxTNCwithAttention
 import config
 import os
 from datetime import datetime
@@ -76,6 +76,15 @@ class train_lstm:
             ).to(self.device)
         elif config.MODEL == "lstm_with_attention":
             self.lstm_model = LSTMModelwithAttention(
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config
+            ).to(self.device)
+        elif config.MODEL == 'LSTMxTNCwithAttention':
+            self.lstm_model = LSTMModelxTNCwithAttention(
                 feature_dim,
                 num_stocks,
                 num_group,

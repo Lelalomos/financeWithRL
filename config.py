@@ -63,7 +63,8 @@ MAP_EWAVE = {
     '4':'4',
     '5':'5'}
 
-MODEL = "lstm_with_attention"
+MODEL = "LSTMxTNCwithAttention"
+# MODEL = "lstm_with_attention"
 # MODEL = "lstm"
 
 WEIGHT_GROUP = {
@@ -137,6 +138,21 @@ LSTM_ATTENTION_PARAMS = {
     'embedding_dim_group': 56, 
     'embedding_dim_day': 33, 
     'embedding_dim_month': 16,
+    'hidden_bilstm': 128, 
+    'first_layer_hidden_size': 256, 
+    'second_layer_hidden_size': 512, 
+    'third_layer_hidden_size': 256,
+    'dropout': 0.4856366310103994, 
+    'delta': 0.11409627325310476, 
+    'attent_hidden_size': 128}
+
+LSTMxTCN_ATTENTION_PARAMS = {
+    'embedding_dim_stock': 206, 
+    'embedding_dim_group': 56, 
+    'embedding_dim_day': 33, 
+    'embedding_dim_month': 16,
+    'tcn_chanel':[32,64],
+    'tcn_kernel':3,
     'hidden_bilstm': 128, 
     'first_layer_hidden_size': 256, 
     'second_layer_hidden_size': 512, 

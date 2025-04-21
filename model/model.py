@@ -4,7 +4,7 @@ import numpy as np
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
-
+from model.tcn_model import TCN
 
 class trading_env(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -222,6 +222,7 @@ class LSTMModelwithAttention(nn.Module):
         self.month_embedding = nn.Embedding(num_month, config['embedding_dim_month'])
 
         input_dim = config["embedding_dim_stock"] + config['embedding_dim_group'] + config['embedding_dim_day']+ config['embedding_dim_month'] + feature_dim
+        
         self.bilstm = nn.LSTM(input_dim, config['hidden_bilstm'], 1, batch_first=True, bidirectional=True)
         self.batch_norm_input = nn.BatchNorm1d(config['hidden_bilstm']*2)
 
@@ -246,6 +247,77 @@ class LSTMModelwithAttention(nn.Module):
 
         combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
         
+        combind_input, _ = self.bilstm(combind_input)
+        # combind_input = combind_input[:, -1, :]
+        # combind_input = self.batch_norm_input(combind_input)
+        # combind_input = combind_input.unsqueeze(1)
+        out, _ = self.lstm1(combind_input)
+        lstm_out21, _ = self.lstm2(out)
+        lstm_out3, _ = self.lstm3(lstm_out21)
+
+        context_vector, _ = self.attention(lstm_out3)
+
+        # Flatten context_vector and pass through fully connected layer
+        context_vector = context_vector.squeeze(1)
+        out1 = self.dropout(context_vector)
+
+        fc_out = self.fc(out1)
+        # print("fc_out:",fc_out)
+        # return torch.tanh(fc_out)
+        # return self.softsign(fc_out)
+        return fc_out
+    
+class LSTMModelxTNCwithAttention(nn.Module):
+    def __init__(self, 
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config):
+        super(LSTMModelxTNCwithAttention, self).__init__()
+
+        config = config.LSTMxTCN_ATTENTION_PARAMS
+        self.stock_embedding = nn.Embedding(num_stocks, config["embedding_dim_stock"])
+        self.group_embedding = nn.Embedding(num_group, config['embedding_dim_group'])
+        self.day_embedding = nn.Embedding(num_day, config['embedding_dim_day'])
+        self.month_embedding = nn.Embedding(num_month, config['embedding_dim_month'])
+
+        input_dim = config["embedding_dim_stock"] + config['embedding_dim_group'] + config['embedding_dim_day']+ config['embedding_dim_month'] + feature_dim
+        
+        self.tcn = TCN(input_size=input_dim, num_channels=config['tcn_chanel'], kernel_size=config['tcn_kernel'], dropout=0.2)
+
+        self.bilstm = nn.LSTM(config['tcn_chanel'][-1], config['hidden_bilstm'], 1, batch_first=True, bidirectional=True)
+        self.batch_norm_input = nn.BatchNorm1d(config['hidden_bilstm']*2)
+
+        self.lstm1 = nn.LSTM(config['hidden_bilstm']*2, config['first_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        self.lstm2 = nn.LSTM(config['first_layer_hidden_size']*2, config['second_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        print("input_dim:",input_dim)
+        self.lstm3 = nn.LSTM(config['second_layer_hidden_size']*2, config['third_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        print("before attention")
+        self.attention = AttentionLayer(config['third_layer_hidden_size'] * 2, config['attent_hidden_size'])
+        print("after attention")
+
+        self.dropout = nn.Dropout(config['dropout'])
+        
+        self.fc = nn.Linear(config['attent_hidden_size'], 1)
+        self.softsign = nn.Softsign()
+
+    def forward(self, stock_name, group_name, day_name, month_name, feature):
+        stock_emb = self.stock_embedding(stock_name)
+        group_emb = self.group_embedding(group_name)
+        month_emb = self.month_embedding(month_name)
+        day_emb = self.day_embedding(day_name)
+
+        combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
+        combind_input = combind_input.transpose(1, 2)
+        # print(f"tcn: {combind_input.shape}")
+        # combind_input = combind_input.transpose(1, 2)  # TCN expects (batch, input_size, seq_len)
+        combind_input = self.tcn(combind_input)        # Output: (batch, tcn_channels[-1], seq_len)
+        # print("tcn final")
+        combind_input = combind_input.transpose(1, 2)
+        
+        # combind_input = combind_input.transpose(1, 2)
         combind_input, _ = self.bilstm(combind_input)
         # combind_input = combind_input[:, -1, :]
         # combind_input = self.batch_norm_input(combind_input)
@@ -369,6 +441,7 @@ class AttentionLayer(nn.Module):
         context_vector = torch.bmm(attention_weights, V)
 
         return context_vector, attention_weights
+
     
 def time_embeddings(time_steps, embedding_dim):
     # positions = torch.arange(1,time_steps).unsqueeze(1)
