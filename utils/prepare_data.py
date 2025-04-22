@@ -10,6 +10,7 @@ from functions import cal_rsi, cal_storsi, cal_ema, get_zigzag, label_elliott_pa
 import sys
 sys.path.append("/app")
 from stockstats.stockstats import StockDataFrame as Sdf
+from datetime import datetime, timedelta
 
 class prepare_data:
     def __init__(self):
@@ -85,6 +86,7 @@ class prepare_data:
     def add_commodity_data(self, dataframe):
         df_copy = dataframe.copy()
         for resource in config.COMMODITY.keys():
+            self.logging.info(f"add {resource}")
             res_data = yf.download(resource, start=None, end=None, multi_level_index=False)
             res_data = res_data.reset_index()
             res_data['mean'] = res_data[['Close','High', 'Low','Open']].mean(axis=1)
@@ -96,6 +98,7 @@ class prepare_data:
         return df_copy
     
     def add_vix_data(self, dataframe):
+        self.logging.info("add VIX INDEX")
         df_copy = dataframe.copy()
         res_data = yf.download("^VIX", start=None, end=None, multi_level_index=False)
         res_data = res_data.reset_index()
@@ -108,6 +111,7 @@ class prepare_data:
         return df_copy
     
     def add_bond_yields(self, dataframe):
+        self.logging.info("add Treasury_Yield")
         df_copy = dataframe.copy()
         bond_yields = web.DataReader(['DGS10', 'DGS30', 'DGS2'], 'fred', None, None)
         bond_yields.columns = ['10Y_Treasury_Yield', '30Y_Treasury_Yield', '2Y_Treasury_Yield']
@@ -123,6 +127,7 @@ class prepare_data:
         return df_copy
     
     def add_elliott_wave(self, dataframe):
+        self.logging.info("add elliott wave")
         df_copy = dataframe.copy()
         pivots = get_zigzag(df_copy, percent=5)
         prices = df_copy['Close'].values
@@ -137,6 +142,28 @@ class prepare_data:
             df_copy.at[idx, 'Elliott_Wave_Label'] = int(new_label)
 
         return df_copy
+    
+    def add_macro_data(self, dataframe):
+        df_copy = dataframe.copy()
+        print(df_copy.columns)
+        start = datetime(2000, 1, 1)
+        end = datetime.today()-timedelta(days=30)
+
+        df_copy['Year'] = df_copy['Date'].dt.year
+        df_copy['Month'] = df_copy['Date'].dt.month
+
+        for mocro_index in config.MACRO_DATA:
+            self.logging.info(f"add {mocro_index}")
+            macro_data = web.DataReader(mocro_index, 'fred', start, end)
+            macro_data = macro_data.reset_index()
+
+            macro_data['Year'] = macro_data['DATE'].dt.year
+            macro_data['Month'] = macro_data['DATE'].dt.month
+
+            df_copy = pd.merge(df_copy, macro_data[['Year', 'Month', mocro_index]], on=['Year', 'Month'], how='left')
+
+        return df_copy
+
 
     def interpret_indicator(self, dataframe):
         # rsi

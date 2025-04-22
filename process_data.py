@@ -33,6 +33,8 @@ def main():
 
     data = pdata_func.add_elliott_wave(data)
 
+    data = pdata_func.add_macro_data(data)
+
     logging.info("prepare data")
     # clean data
     # data = pdata_func.pre_clean_data(data)
@@ -93,7 +95,7 @@ def main():
     group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(100,200),axis=1)
 
     # column Outliers
-    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())
+    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+list(config.MACRO_DATA)
 
     # df_outlier = group_sector[outliers_column]
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)

@@ -17,6 +17,14 @@ COMMODITY = {
             'ZS=F': 'Soybeans'
         }
 
+MACRO_DATA = [
+    "FEDFUNDS",
+    "M2SL",
+    "UNRATE",
+    "RSAFS",
+    "PCEPILFE"
+]
+
 SECTOR_GROUP = {
         "software":["ADBE","DUOL","CRM","MDB",
                     "U","SPOT","ACN","PINS","GTLB","WIX","BOX","AMBA",
