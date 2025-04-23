@@ -1,13 +1,13 @@
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
-import torch
-from model import  LSTMModel
 import pandas as pd
 import talib
 import config
 from datetime import datetime
 import math
 from scipy.signal import argrelextrema
+from model.prophet_model import pipeline_prophet
+from model.pca_model import pca_model
 
 def search_null_value(df):
     columns_with_null = df.columns[df.isnull().any()]
@@ -29,102 +29,6 @@ def detect_outliers_iqr(data, threshold=1.5):
     upper_bound = q3 + (threshold * iqr)
     return len(np.where((data < lower_bound) | (data > upper_bound))[0])
 
-
-def predict_nanvalue_lstm(data, column_name, model_path, device, default_value = 0):
-    if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
-        close = float(data['close'])
-        model = LSTMModel()
-        model.load_state_dict(torch.load(model_path, map_location=device))
-        model.to(device)
-        model.eval()
-        x = np.array([[[close]]])
-        x = torch.tensor(x, dtype=torch.float32).to(device)
-        x = x.to(torch.float32)
-        
-        with torch.no_grad():
-            prediction = model(x).item()
-            
-        if np.isnan(prediction):
-            prediction = default_value
-        return prediction
-    else:
-        return data[column_name]
-    
-def predict_lstm_single(close_value, model_path, device, default_value = 0):
-    # print("device",device)
-    close = float(close_value)
-    model = LSTMModel()
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.to(device)
-    model.eval()
-    x = np.array([[[close]]])
-    x = torch.tensor(x, dtype=torch.float32).to(device)
-    x = x.to(torch.float32)
-    
-    with torch.no_grad():
-        prediction = model(x).item()
-        
-    if np.isnan(prediction):
-        prediction = default_value
-        
-    return prediction
-
-def predict_lstm_multiple(data:pd.Series, model_path:str, device, default_value = 0):
-    model = LSTMModel(input_size=len(data.keys()))
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.to(device)
-    model.eval()
-    x = np.array([[data]])
-    x = torch.tensor(x,dtype=torch.float32).to(device)
-    x = x.to(torch.float32)
-    with torch.no_grad():
-        prediction = model(x).item()
-        
-    if np.isnan(prediction):
-        prediction = default_value
-        
-    return prediction
-    
-# must fix parameter model and parameter data
-def predict_nanvalue_lstm_vwma(data, column_name, model_path, device, default_value = 0):
-    if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
-        close = float(data['close'])
-        volumn = float(data['Volume'])
-        model = LSTMModel()
-        model.load_state_dict(torch.load(model_path, map_location=device))
-        model.to(device)
-        model.eval()
-        x = np.array([[[close,volumn]]])
-        x = torch.tensor(x,dtype=torch.float32).to(device)
-        x = x.to(torch.float32)
-        with torch.no_grad():
-            prediction = model(x).item()
-            
-        if np.isnan(prediction):
-            prediction = default_value
-        return prediction
-    else:
-        return data[column_name]
-    
-def predict_nanvalue_lstm_ichimoku(data, column_name, model_path, device, default_value = 0):
-    if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
-        close = float(data['close'])
-        high = float(data['high'])
-        low = float(data['low'])
-        model = LSTMModel()
-        model.load_state_dict(torch.load(model_path, map_location=device))
-        model.to(device)
-        model.eval()
-        x = np.array([[[close,high,low]]])
-        x = torch.tensor(x,dtype=torch.float32).to(device)
-        x = x.to(torch.float32)
-        with torch.no_grad():
-            prediction = model(x).item()
-        if np.isnan(prediction):
-            prediction = default_value
-        return prediction
-    else:
-        return data[column_name]
     
 def refill_missingvalue(data, column_name, default_value = 0):
     if pd.isna(data[column_name]) or data[column_name] in [None,np.nan,""]:
@@ -449,5 +353,3 @@ def label_elliott_patterns(pivots, prices):
                 waves[c] = 'C'
 
     return waves
-
-       
