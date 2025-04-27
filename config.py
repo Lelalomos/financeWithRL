@@ -123,6 +123,9 @@ STORSI_DOWN = 0.2
 ICHIMOKU_UP = 1
 ICHIMOKU_DOWN = 0.5
 
+# PCA model
+PCA_MACRO_DATA_COLUMN = ['yhat','yhat_lower','yhat_upper','trend_lower','trend_upper',"yearly","yearly_lower","yearly_upper"]
+
 # lstm model config
 LSTM_PARAMS = {
     'output_size': 226, 

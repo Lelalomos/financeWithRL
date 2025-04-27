@@ -28,10 +28,10 @@ class prophet_model:
         forecast = model.predict(future)
         return forecast
     
-def pipeline_prophet(df_data, save_model = True, changepoint_prior_scale = 0.3, holidays_prior_scale = 7, seasonality_prior_scale = 7):
+def pipeline_prophet(df_data, save_model = True, changepoint_prior_scale = 0.3, holidays_prior_scale = 7, seasonality_prior_scale = 7, period=7):
     model = prophet_model(changepoint_prior_scale, holidays_prior_scale, seasonality_prior_scale)
     ppm = model.train(df_data, save_model)
-    forecast = model.predict(ppm)
+    forecast = model.predict(ppm, period)
     return forecast
 
 if __name__ == "__main__":

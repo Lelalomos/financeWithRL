@@ -353,3 +353,57 @@ def label_elliott_patterns(pivots, prices):
                 waves[c] = 'C'
 
     return waves
+
+def predict_macro_value(df):
+    tic_name = list(df['tic'].unique())
+    df['Date'] = pd.to_datetime(df['Date'])
+    for tic in tic_name:
+        temp = df[df['tic']==tic]
+        temp['Date'] = pd.to_datetime(temp['Date'])
+        temp = temp.sort_values(by='Date', ascending=True).reset_index(drop=True)
+        
+        for macro_field in config.MACRO_DATA:
+            print(f"forecast: {macro_field}")
+            filter_notna = temp[~temp[macro_field].isna()]
+            filter_na = temp[temp[macro_field].isna()]
+            # print(cal_date)
+            if not filter_na.empty:
+                date = filter_na['Date'].to_list()
+                # print(date)
+                cal_date = date[-1]-date[0]
+                print(f"date cal: {date[-1]} - {date[0]}")
+
+                dataset = filter_notna[[macro_field,'Date']]
+                dataset = dataset.rename(columns={macro_field:"y","Date":"ds"})
+                print(f"cal_date: {cal_date.days}")
+                forecast = pipeline_prophet(dataset, save_model=False, period=cal_date.days+5)
+                forecast = forecast[(forecast['ds'] >= date[0]) & (forecast['ds'] <= date[-1])]
+                print("pho forecast:",len(forecast))
+
+                # filter columns
+                forecast = forecast[config.PCA_MACRO_DATA_COLUMN]
+                _pca = pca_model(componant=1)
+                norm_data = _pca.norm(forecast)
+                forecasted = _pca.start(norm_data, forecast)
+                print(f"len date: {len(forecasted.index)}")
+                # generate datetime
+                forecasted['Date'] = pd.date_range(start=date[0], periods=len(forecasted.index), freq='D')
+                # merge
+                forecasted = forecasted[['PCA1','Date']]
+                forecasted = forecasted.rename(columns={"PCA1":f"{macro_field}"})
+                # print(forecasted)
+
+                df_filter = df[df['tic']==tic]
+                df_filter = df_filter[df_filter[macro_field].isna()]
+                df_filter = df_filter.drop([macro_field],axis=1)
+                merge = pd.merge(df_filter, forecasted, how="left", on="Date")
+
+                df = df.dropna(subset=[macro_field])
+                df = pd.concat([df,merge])
+
+    df = df.drop(['Year','Month'],axis=1)
+    print("columns finish predict",df.columns)
+    return df
+
+
+
