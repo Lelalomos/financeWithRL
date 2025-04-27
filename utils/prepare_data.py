@@ -141,6 +141,8 @@ class prepare_data:
             new_label = config.MAP_EWAVE[label]
             df_copy.at[idx, 'Elliott_Wave_Label'] = int(new_label)
 
+        df_copy = df_copy.dropna(subset=['tic'])
+
         return df_copy
     
     def add_macro_data(self, dataframe):

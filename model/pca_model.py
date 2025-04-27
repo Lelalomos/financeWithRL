@@ -2,7 +2,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import pandas_datareader.data as web
 from datetime import datetime, timedelta
-from prophet_model import pipeline_prophet
+from model.prophet_model import pipeline_prophet
 
 class pca_model:
     def __init__(self, componant = 2):
