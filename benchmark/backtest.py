@@ -4,9 +4,9 @@ sys.path.append("/app")
 from utils import prepare_data, normalization_data
 import pandas as pd
 import numpy as np
-from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int
+from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int, predict_macro_value
 import config
-from model.model import LSTMModel, LSTMModelwithAttention
+from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxTNCwithAttention
 import torch
 import os
 from datetime import datetime
@@ -20,8 +20,15 @@ class backtest:
     def prepare_data(self, start_date, end_date):
         data = self.predata_func.download_data(config.TICKET_LIST, start_date=start_date, end_date=end_date, interval="1d")
         data = data.rename(columns=config.MAP_COLUMNS_NAME)
+        data = self.predata_func.add_elliott_wave(data)
         print(data)
         print(data.columns)
+        if config.MODEL == 'LSTMxTNCwithAttention':
+            data = self.predata_func.add_macro_data(data)
+            # predict macro value
+            print("before predict",data.columns)
+            data = predict_macro_value(data)
+
         data = self.predata_func.add_indicator(data, config.INDICATOR_LIST)
         data = self.predata_func.add_commodity_data(data)
         data = self.predata_func.add_vix_data(data)
@@ -56,7 +63,10 @@ class backtest:
         group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(100,200),axis=1)
 
         # column Outliers
-        outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())
+        if config.MODEL == 'LSTMxTNCwithAttention':
+            outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+['Elliott_Wave_Label']+list(config.MACRO_DATA)
+        else:
+            outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+['Elliott_Wave_Label']
 
         # df_outlier = group_sector[outliers_column]
         group_sector = self.norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
@@ -99,14 +109,25 @@ class backtest:
         month_tensor = month_tensor.unsqueeze(1)
         day_tensor = day_tensor.unsqueeze(1)
 
-        lstm_model = LSTMModelwithAttention(
+        print(f"model: {config.MODEL}")
+        if config.MODEL == "lstm_with_attention":
+            lstm_model = LSTMModelwithAttention(
+                    feature_dim,
+                    num_stocks,
+                    num_group,
+                    num_day,
+                    num_month,
+                    config
+            ).to(self.device)
+        elif config.MODEL == 'LSTMxTNCwithAttention':
+            lstm_model = LSTMModelxTNCwithAttention(
                 feature_dim,
                 num_stocks,
                 num_group,
                 num_day,
                 num_month,
                 config
-        ).to(self.device)
+            ).to(self.device)
 
         lstm_model.load_state_dict(torch.load(model_path))
         lstm_model.eval()
@@ -130,14 +151,14 @@ class backtest:
 
 if __name__ == "__main__":
     bk = backtest()
-    if os.path.isfile("data/test_real.parquet"):
-        data = pd.read_parquet("data/test_real.parquet")
-    else:
-        data = bk.prepare_data('2025-01-01','2025-02-01')
-        data.to_parquet("data/test_real.parquet")
+    # if os.path.isfile("data/test_real.parquet"):
+    #     data = pd.read_parquet("data/test_real.parquet")
+    # else:
+    data = bk.prepare_data('2025-03-01','2025-04-01')
+    data.to_parquet("data/test_real.parquet")
 
     os.makedirs(os.path.join(os.getcwd(),'output'),exist_ok=True)
-    output = bk.test(data, "saved_model/20250316_lstm_200_model.pth")
+    output = bk.test(data, "saved_model/20250428_lstm_model.pth")
     today = datetime.today()
     ymd = today.strftime("%Y%m%d-%H%M%S")
     path_output = os.path.join(os.getcwd(),'output',f'backtest-{ymd}.xlsx')

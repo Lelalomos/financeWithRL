@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 sys.path.append("/app")
-from model.model import LSTMModel, LSTMModelwithAttention
+from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxTNCwithAttention
 import config
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -52,6 +52,15 @@ class evaluate_model:
             ).to(device)
         elif config.MODEL == "lstm_with_attention":
             self.lstm_model = LSTMModelwithAttention(
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config
+            ).to(device)
+        elif config.MODEL == 'LSTMxTNCwithAttention':
+            self.lstm_model = LSTMModelxTNCwithAttention(
                 feature_dim,
                 num_stocks,
                 num_group,
@@ -125,4 +134,4 @@ def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.ge
             
 
 if __name__ == "__main__":
-    evaluate_lstm("saved_model/20250316_lstm_200_model.pth")
+    evaluate_lstm("saved_model/20250428_lstm_model.pth")

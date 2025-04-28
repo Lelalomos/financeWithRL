@@ -1,5 +1,5 @@
 from utils import return_logs, prepare_data, normalization_data
-from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int, split_dataset, split_realdata
+from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int, split_dataset, split_realdata, predict_macro_value
 import os
 import pandas as pd
 import numpy as np
@@ -27,13 +27,19 @@ def main():
 
     # data = data[data["tic"].isin(config.TICKET_LIST)]
     data = data[data['Date'].dt.year >=2001]
+    data = data.rename(columns=config.MAP_COLUMNS_NAME)
 
     # filter tickle
     # data = data[~data['tic'].isin(list(config.not_use))]
 
     data = pdata_func.add_elliott_wave(data)
-
     data = pdata_func.add_macro_data(data)
+
+    # predict macro value
+    # print("before predict",data.columns)
+    data = predict_macro_value(data)
+
+    # data.to_csv("test.csv")
 
     logging.info("prepare data")
     # clean data
@@ -95,7 +101,7 @@ def main():
     group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(100,200),axis=1)
 
     # column Outliers
-    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+list(config.MACRO_DATA)
+    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+['Elliott_Wave_Label']+list(config.MACRO_DATA)
 
     # df_outlier = group_sector[outliers_column]
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
@@ -107,6 +113,10 @@ def main():
 
     # group_sector = group_sector.round(4)
     group_sector.drop(['Date'], inplace=True, axis=1)
+
+    # save dataset
+    temp_data = group_sector.copy()
+    temp_data.to_parquet("saved_model/clean_model.parquet")
 
     # ต้องเพิ่ม label ว่าต้องการแบบไหน
     # split train, validate, test

@@ -272,7 +272,7 @@ def split_realdata(df, test_ratio=0.06):
 
 # wave
 def get_zigzag(df, percent=5):
-    price = df['Close'].values
+    price = df['close'].values
     highs = argrelextrema(price, np.greater, order=5)[0]
     lows = argrelextrema(price, np.less, order=5)[0]
     pivots = sorted(np.concatenate((highs, lows)))
@@ -355,10 +355,11 @@ def label_elliott_patterns(pivots, prices):
     return waves
 
 def predict_macro_value(df):
-    tic_name = list(df['tic'].unique())
-    df['Date'] = pd.to_datetime(df['Date'])
+    df_copy = df.copy()
+    tic_name = list(df_copy['tic'].unique())
+    df_copy['Date'] = pd.to_datetime(df_copy['Date'])
     for tic in tic_name:
-        temp = df[df['tic']==tic]
+        temp = df_copy[df_copy['tic']==tic]
         temp['Date'] = pd.to_datetime(temp['Date'])
         temp = temp.sort_values(by='Date', ascending=True).reset_index(drop=True)
         
@@ -382,28 +383,25 @@ def predict_macro_value(df):
 
                 # filter columns
                 forecast = forecast[config.PCA_MACRO_DATA_COLUMN]
-                _pca = pca_model(componant=1)
-                norm_data = _pca.norm(forecast)
-                forecasted = _pca.start(norm_data, forecast)
-                print(f"len date: {len(forecasted.index)}")
+                
                 # generate datetime
-                forecasted['Date'] = pd.date_range(start=date[0], periods=len(forecasted.index), freq='D')
+                forecast['Date'] = pd.date_range(start=date[0], periods=len(forecast.index), freq='D')
                 # merge
-                forecasted = forecasted[['PCA1','Date']]
-                forecasted = forecasted.rename(columns={"PCA1":f"{macro_field}"})
-                # print(forecasted)
+                forecast = forecast.rename(columns={config.PCA_MACRO_DATA_COLUMN[0]:f"{macro_field}"})
 
-                df_filter = df[df['tic']==tic]
+                df_filter = df_copy[df_copy['tic']==tic]
                 df_filter = df_filter[df_filter[macro_field].isna()]
                 df_filter = df_filter.drop([macro_field],axis=1)
-                merge = pd.merge(df_filter, forecasted, how="left", on="Date")
+                print(f"df_filter: {df_filter.columns}")
+                merge = pd.merge(df_filter, forecast, how="left", on="Date")
 
-                df = df.dropna(subset=[macro_field])
-                df = pd.concat([df,merge])
+                df_copy = df_copy.dropna(subset=[macro_field])
+                df_copy = pd.concat([df_copy,merge])
 
     df = df.drop(['Year','Month'],axis=1)
-    print("columns finish predict",df.columns)
-    return df
+    print("columns finish predict",df_copy.columns)
+    df_copy = df_copy.reset_index(drop=True)
+    return df_copy
 
 
 

@@ -130,7 +130,7 @@ class prepare_data:
         self.logging.info("add elliott wave")
         df_copy = dataframe.copy()
         pivots = get_zigzag(df_copy, percent=5)
-        prices = df_copy['Close'].values
+        prices = df_copy['close'].values
         wave_labels = label_elliott_patterns(pivots, prices)
 
         # Create a new column in df to store the Elliott Wave labels
