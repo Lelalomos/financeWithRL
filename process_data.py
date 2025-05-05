@@ -32,7 +32,7 @@ def main():
     # filter tickle
     # data = data[~data['tic'].isin(list(config.not_use))]
 
-    data = pdata_func.add_elliott_wave(data)
+    # data = pdata_func.add_elliott_wave(data)
     data = pdata_func.add_macro_data(data)
 
     # predict macro value
@@ -75,8 +75,7 @@ def main():
 
     #     cal_pre = pd.concat([cal_pre,temp_data])
 
-    # cal_pre = cal_pre.sort_values(by=["Date", "tic"])
-
+    # data = cal_pre.sort_values(by=["Date", "tic"])
 
     data["pre_7"] = data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
     data["pre_7"] = np.tanh(data["pre_7"] / 100) * 100
@@ -101,7 +100,7 @@ def main():
     group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(100,200),axis=1)
 
     # column Outliers
-    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+['Elliott_Wave_Label']+list(config.MACRO_DATA)
+    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+list(config.MACRO_DATA)
 
     # df_outlier = group_sector[outliers_column]
     group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)

@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from functions import return_candle_pattern, groupping_stock, cal_rsi,cal_storsi, cal_ichimoku, cal_ema, convert_string2int, predict_macro_value
 import config
-from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxTNCwithAttention
+from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxCNNwithAttention
 import torch
 import os
 from datetime import datetime
@@ -20,10 +20,10 @@ class backtest:
     def prepare_data(self, start_date, end_date):
         data = self.predata_func.download_data(config.TICKET_LIST, start_date=start_date, end_date=end_date, interval="1d")
         data = data.rename(columns=config.MAP_COLUMNS_NAME)
-        data = self.predata_func.add_elliott_wave(data)
+        # data = self.predata_func.add_elliott_wave(data)
         print(data)
         print(data.columns)
-        if config.MODEL == 'LSTMxTNCwithAttention':
+        if config.MODEL == 'LSTMModelxCNNwithAttention':
             data = self.predata_func.add_macro_data(data)
             # predict macro value
             print("before predict",data.columns)
@@ -40,6 +40,19 @@ class backtest:
         data['month'] = data['Date'].dt.month
         data['year'] = data['Date'].dt.year
         data = data.sort_values(by=["Date", "tic"])
+
+        # cal_pre = pd.DataFrame(dtype=str)
+
+        # for tic in config.TICKET_LIST:
+        #     temp_data = data[data['tic'] == tic]
+        #     temp_data["pre_7"] = temp_data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
+        #     temp_data["pre_7"] = np.tanh(temp_data["pre_7"] / 100) * 100
+        #     temp_data["pre_7"] = temp_data["pre_7"].fillna(method="bfill", limit=7)
+
+        #     cal_pre = pd.concat([cal_pre,temp_data])
+
+        # data = cal_pre.sort_values(by=["Date", "tic"])
+        
         data["pre_7"] = data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
         data["pre_7"] = np.tanh(data["pre_7"] / 100) * 100
         data["pre_7"] = data["pre_7"].fillna(method="bfill", limit=7)
@@ -63,8 +76,8 @@ class backtest:
         group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(100,200),axis=1)
 
         # column Outliers
-        if config.MODEL == 'LSTMxTNCwithAttention':
-            outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+['Elliott_Wave_Label']+list(config.MACRO_DATA)
+        if config.MODEL == 'LSTMModelxCNNwithAttention':
+            outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+list(config.MACRO_DATA)
         else:
             outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+['Elliott_Wave_Label']
 
@@ -119,8 +132,8 @@ class backtest:
                     num_month,
                     config
             ).to(self.device)
-        elif config.MODEL == 'LSTMxTNCwithAttention':
-            lstm_model = LSTMModelxTNCwithAttention(
+        elif config.MODEL == 'LSTMModelxCNNwithAttention':
+            lstm_model = LSTMModelxCNNwithAttention(
                 feature_dim,
                 num_stocks,
                 num_group,
@@ -158,7 +171,7 @@ if __name__ == "__main__":
     data.to_parquet("data/test_real.parquet")
 
     os.makedirs(os.path.join(os.getcwd(),'output'),exist_ok=True)
-    output = bk.test(data, "saved_model/20250428_lstm_model.pth")
+    output = bk.test(data, "saved_model/20250505_lstm_model.pth")
     today = datetime.today()
     ymd = today.strftime("%Y%m%d-%H%M%S")
     path_output = os.path.join(os.getcwd(),'output',f'backtest-{ymd}.xlsx')

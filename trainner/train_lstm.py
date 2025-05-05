@@ -8,7 +8,7 @@ import numpy as np
 import sys
 sys.path.append("/app")
 
-from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxTNCwithAttention
+from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxCNNwithAttention
 import config
 import os
 from datetime import datetime
@@ -83,8 +83,8 @@ class train_lstm:
                 num_month,
                 config
             ).to(self.device)
-        elif config.MODEL == 'LSTMxTNCwithAttention':
-            self.lstm_model = LSTMModelxTNCwithAttention(
+        elif config.MODEL == 'LSTMModelxCNNwithAttention':
+            self.lstm_model = LSTMModelxCNNwithAttention(
                 feature_dim,
                 num_stocks,
                 num_group,
@@ -120,11 +120,11 @@ class train_lstm:
                 # self.list_loss.append(loss.item())
                 val_loss += loss.item()
                     
-                if self.debug_loss:
-                    if loss.item() < self.threshold_loss:
-                        print(f'Loss is below threshold ({self.threshold_loss}), saving the model...')
-                        torch.save(self.lstm_model.state_dict(), 'model.pth')
-                        break
+                # if self.debug_loss:
+                #     if loss.item() < self.threshold_loss:
+                #         print(f'Loss is below threshold ({self.threshold_loss}), saving the model...')
+                #         torch.save(self.lstm_model.state_dict(), 'model.pth')
+                #         break
 
             avg_loss = val_loss / len(train_loader)
             print(f"Epoch [{epoch+1}/{self.epochs}], Loss: {avg_loss:.4f}")
@@ -163,7 +163,7 @@ def train_lstm_func(df_train = pd.read_parquet(os.path.join(os.getcwd(),"data","
 
     today = datetime.today()
     ymd = today.strftime("%Y%m%d")
-    lstm = train_lstm(epochs=250, batch_size = 512, path_save_model = os.path.join(os.getcwd(),'saved_model',f'{ymd}_lstm_model.pth'))
+    lstm = train_lstm(epochs=500, batch_size = 512, path_save_model = os.path.join(os.getcwd(),'saved_model',f'{ymd}_lstm_model.pth'))
     lstm.train(X_val, y_val, stock_tensor, group_tensor, day_tensor, month_tensor, feature_dim, num_stocks, num_group, num_day, num_month)
     lstm.export_model()
 

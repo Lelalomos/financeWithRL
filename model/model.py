@@ -267,7 +267,7 @@ class LSTMModelwithAttention(nn.Module):
         # return self.softsign(fc_out)
         return fc_out
     
-class LSTMModelxTNCwithAttention(nn.Module):
+class LSTMModelxCNNwithAttention(nn.Module):
     def __init__(self, 
                 feature_dim,
                 num_stocks,
@@ -275,7 +275,7 @@ class LSTMModelxTNCwithAttention(nn.Module):
                 num_day,
                 num_month,
                 config):
-        super(LSTMModelxTNCwithAttention, self).__init__()
+        super(LSTMModelxCNNwithAttention, self).__init__()
 
         config = config.LSTMxTCN_ATTENTION_PARAMS
         self.stock_embedding = nn.Embedding(num_stocks, config["embedding_dim_stock"])
@@ -285,14 +285,20 @@ class LSTMModelxTNCwithAttention(nn.Module):
 
         input_dim = config["embedding_dim_stock"] + config['embedding_dim_group'] + config['embedding_dim_day']+ config['embedding_dim_month'] + feature_dim
         
-        self.tcn = TCN(input_size=input_dim, num_channels=config['tcn_chanel'], kernel_size=config['tcn_kernel'], dropout=0.2)
+        # self.tcn = TCN(input_size=input_dim, num_channels=config['tcn_chanel'], kernel_size=config['tcn_kernel'], dropout=0.2)
+        self.cnn = nn.Sequential(
+            nn.Conv1d(in_channels=input_dim, out_channels=config['cnn_chanel1'], kernel_size=1,padding='same'),
+            nn.LeakyReLU(),
+            nn.Conv1d(in_channels=config['cnn_chanel1'], out_channels=config['cnn_chanel2'], kernel_size=1,padding='same'),
+            nn.LeakyReLU(),
+            nn.MaxPool1d(kernel_size=1,stride=2)
+        )
 
-        self.bilstm = nn.LSTM(config['tcn_chanel'][-1], config['hidden_bilstm'], 1, batch_first=True, bidirectional=True)
+        self.bilstm = nn.LSTM(config['cnn_chanel2'], config['hidden_bilstm'], 1, batch_first=True, bidirectional=True)
         self.batch_norm_input = nn.BatchNorm1d(config['hidden_bilstm']*2)
 
         self.lstm1 = nn.LSTM(config['hidden_bilstm']*2, config['first_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
         self.lstm2 = nn.LSTM(config['first_layer_hidden_size']*2, config['second_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
-        print("input_dim:",input_dim)
         self.lstm3 = nn.LSTM(config['second_layer_hidden_size']*2, config['third_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
         print("before attention")
         self.attention = AttentionLayer(config['third_layer_hidden_size'] * 2, config['attent_hidden_size'])
@@ -312,8 +318,7 @@ class LSTMModelxTNCwithAttention(nn.Module):
         combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
         combind_input = combind_input.transpose(1, 2)
         # print(f"tcn: {combind_input.shape}")
-        # combind_input = combind_input.transpose(1, 2)  # TCN expects (batch, input_size, seq_len)
-        combind_input = self.tcn(combind_input)        # Output: (batch, tcn_channels[-1], seq_len)
+        combind_input = self.cnn(combind_input)        # Output: (batch, tcn_channels[-1], seq_len)
         # print("tcn final")
         combind_input = combind_input.transpose(1, 2)
         
