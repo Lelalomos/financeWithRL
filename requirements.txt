@@ -1,6 +1,6 @@
 pipe
 gymnasium
-yfinance==0.2.54
+yfinance==0.2.59
 scikit-learn==1.5.2
 pandas==2.0
 torch
@@ -11,4 +11,5 @@ seaborn
 numpy==1.26.4
 optuna
 prophet
+pandas_datareader
 
