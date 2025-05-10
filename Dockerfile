@@ -1,7 +1,11 @@
 # Use NVIDIA's CUDA base image
-FROM python:3.10.16-slim-bullseye
+FROM python:3.11.12-slim-bullseye
 
-USER root
+# COPY permissions.sh /usr/local/bin/
+# RUN chmod +x /usr/local/bin/permissions.sh
+# ENTRYPOINT ["/usr/local/bin/permissions.sh"]
+
+RUN useradd -m -u 1000 lelalomos
 
 ENV TZ="Asia/Bangkok"
 RUN apt-get -y update
@@ -22,5 +26,7 @@ RUN pip install --upgrade pip
 COPY . /app
 
 WORKDIR /app
+
+USER lelalomos
 
 
