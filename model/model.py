@@ -277,7 +277,7 @@ class LSTMModelxCNNwithAttention(nn.Module):
                 config):
         super(LSTMModelxCNNwithAttention, self).__init__()
 
-        config = config.LSTMxTCN_ATTENTION_PARAMS
+        config = config.LSTMxCNN_ATTENTION_PARAMS
         self.stock_embedding = nn.Embedding(num_stocks, config["embedding_dim_stock"])
         self.group_embedding = nn.Embedding(num_group, config['embedding_dim_group'])
         self.day_embedding = nn.Embedding(num_day, config['embedding_dim_day'])
@@ -338,10 +338,160 @@ class LSTMModelxCNNwithAttention(nn.Module):
         out1 = self.dropout(context_vector)
 
         fc_out = self.fc(out1)
-        # print("fc_out:",fc_out)
-        # return torch.tanh(fc_out)
-        # return self.softsign(fc_out)
         return fc_out
+    
+class LSTMModelxCNNxNORMWithAttention(nn.Module):
+    def __init__(self, 
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config):
+        super(LSTMModelxCNNxNORMWithAttention, self).__init__()
+
+        config = config.LSTMxCNNxNORM_ATTENTION_PARAMS
+        self.stock_embedding = nn.Embedding(num_stocks, config["embedding_dim_stock"])
+        self.group_embedding = nn.Embedding(num_group, config['embedding_dim_group'])
+        self.day_embedding = nn.Embedding(num_day, config['embedding_dim_day'])
+        self.month_embedding = nn.Embedding(num_month, config['embedding_dim_month'])
+
+        input_dim = config["embedding_dim_stock"] + config['embedding_dim_group'] + config['embedding_dim_day']+ config['embedding_dim_month'] + feature_dim
+        
+        # self.tcn = TCN(input_size=input_dim, num_channels=config['tcn_chanel'], kernel_size=config['tcn_kernel'], dropout=0.2)
+        self.cnn = nn.Sequential(
+            nn.Conv1d(in_channels=input_dim, out_channels=config['cnn_chanel1'], kernel_size=1,padding='same'),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(config['cnn_chanel1']),
+            nn.Conv1d(in_channels=config['cnn_chanel1'], out_channels=config['cnn_chanel2'], kernel_size=1,padding='same'),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(config['cnn_chanel2']),
+            nn.MaxPool1d(kernel_size=1,stride=2)
+        )
+
+        self.bilstm = nn.LSTM(config['cnn_chanel2'], config['hidden_bilstm'], 1, batch_first=True, bidirectional=True)
+        self.layernorm1 = nn.LayerNorm(config['hidden_bilstm']*2)
+
+        self.lstm1 = nn.LSTM(config['hidden_bilstm']*2, config['first_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        self.lstm2 = nn.LSTM(config['first_layer_hidden_size']*2, config['second_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        self.lstm3 = nn.LSTM(config['second_layer_hidden_size']*2, config['third_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        self.layernorm2 = nn.LayerNorm(config['third_layer_hidden_size']*2)
+
+        print("before attention")
+        self.attention = AttentionLayer(config['third_layer_hidden_size'] * 2, config['attent_hidden_size'])
+        print("after attention")
+
+        self.dropout = nn.Dropout(config['dropout'])
+        
+        self.fc = nn.Linear(config['attent_hidden_size'], 1)
+        self.softsign = nn.Softsign()
+
+    def forward(self, stock_name, group_name, day_name, month_name, feature):
+        stock_emb = self.stock_embedding(stock_name)
+        group_emb = self.group_embedding(group_name)
+        month_emb = self.month_embedding(month_name)
+        day_emb = self.day_embedding(day_name)
+
+        combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
+        combind_input = combind_input.transpose(1, 2)
+        # print(f"tcn: {combind_input.shape}")
+        combind_input = self.cnn(combind_input)        # Output: (batch, tcn_channels[-1], seq_len)
+        # print("tcn final")
+        combind_input = combind_input.transpose(1, 2)
+        
+        # combind_input = combind_input.transpose(1, 2)
+        combind_input, _ = self.bilstm(combind_input)
+        combind_input = self.layernorm1(combind_input)
+        out, _ = self.lstm1(combind_input)
+        lstm_out21, _ = self.lstm2(out)
+        lstm_out3, _ = self.lstm3(lstm_out21)
+        lstm_out3 = self.layernorm2(lstm_out3)
+
+        context_vector, _ = self.attention(lstm_out3)
+
+        # Flatten context_vector and pass through fully connected layer
+        context_vector = context_vector.squeeze(1)
+        out1 = self.dropout(context_vector)
+
+        fc_out = self.fc(out1)
+        return fc_out
+    
+class LSTMModelxCNNxNORMWithMultiAttention(nn.Module):
+    def __init__(self, 
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config):
+        super(LSTMModelxCNNxNORMWithMultiAttention, self).__init__()
+
+        config = config.LSTMxCNNxNORM_MULRIATTENTION_PARAMS
+        self.stock_embedding = nn.Embedding(num_stocks, config["embedding_dim_stock"])
+        self.group_embedding = nn.Embedding(num_group, config['embedding_dim_group'])
+        self.day_embedding = nn.Embedding(num_day, config['embedding_dim_day'])
+        self.month_embedding = nn.Embedding(num_month, config['embedding_dim_month'])
+
+        input_dim = config["embedding_dim_stock"] + config['embedding_dim_group'] + config['embedding_dim_day']+ config['embedding_dim_month'] + feature_dim
+        
+        # self.tcn = TCN(input_size=input_dim, num_channels=config['tcn_chanel'], kernel_size=config['tcn_kernel'], dropout=0.2)
+        self.cnn = nn.Sequential(
+            nn.Conv1d(in_channels=input_dim, out_channels=config['cnn_chanel1'], kernel_size=1,padding='same'),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(config['cnn_chanel1']),
+            nn.Conv1d(in_channels=config['cnn_chanel1'], out_channels=config['cnn_chanel2'], kernel_size=1,padding='same'),
+            nn.LeakyReLU(),
+            nn.BatchNorm1d(config['cnn_chanel2']),
+            nn.MaxPool1d(kernel_size=1,stride=2)
+        )
+
+        self.bilstm = nn.LSTM(config['cnn_chanel2'], config['hidden_bilstm'], 1, batch_first=True, bidirectional=True)
+        self.layernorm1 = nn.LayerNorm(config['hidden_bilstm']*2)
+
+        self.lstm1 = nn.LSTM(config['hidden_bilstm']*2, config['first_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        self.lstm2 = nn.LSTM(config['first_layer_hidden_size']*2, config['second_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        self.lstm3 = nn.LSTM(config['second_layer_hidden_size']*2, config['third_layer_hidden_size'], 1, batch_first=True, bidirectional=True)
+        self.layernorm2 = nn.LayerNorm(config['third_layer_hidden_size']*2)
+
+        print("before attention")
+        # self.attention = AttentionLayer(config['third_layer_hidden_size'] * 2, config['attent_hidden_size'])
+        self.attention = nn.MultiheadAttention(embed_dim=config['third_layer_hidden_size'] * 2, num_heads=config['num_head_attention'], batch_first=True)
+        print("after attention")
+
+        self.dropout = nn.Dropout(config['dropout'])
+        
+        self.fc = nn.Linear(config['third_layer_hidden_size']*2, 1)
+        self.softsign = nn.Softsign()
+
+    def forward(self, stock_name, group_name, day_name, month_name, feature):
+        stock_emb = self.stock_embedding(stock_name)
+        group_emb = self.group_embedding(group_name)
+        month_emb = self.month_embedding(month_name)
+        day_emb = self.day_embedding(day_name)
+
+        combind_input = torch.cat([stock_emb, group_emb,day_emb,month_emb, feature], dim=2)
+        combind_input = combind_input.transpose(1, 2)
+        # print(f"tcn: {combind_input.shape}")
+        combind_input = self.cnn(combind_input)        # Output: (batch, tcn_channels[-1], seq_len)
+        # print("tcn final")
+        combind_input = combind_input.transpose(1, 2)
+        
+        # combind_input = combind_input.transpose(1, 2)
+        combind_input, _ = self.bilstm(combind_input)
+        combind_input = self.layernorm1(combind_input)
+        out, _ = self.lstm1(combind_input)
+        lstm_out21, _ = self.lstm2(out)
+        lstm_out3, _ = self.lstm3(lstm_out21)
+        lstm_out3 = self.layernorm2(lstm_out3)
+
+        attn_out, _ = self.attention(lstm_out3,lstm_out3,lstm_out3)
+        context_vector = attn_out.mean(dim=1)
+
+        out1 = self.dropout(context_vector)
+
+        fc_out = self.fc(out1)
+        return fc_out
+
 
 class LSTMModelwithAttention_HYPER(nn.Module):
     def __init__(self,
@@ -361,11 +511,6 @@ class LSTMModelwithAttention_HYPER(nn.Module):
                  hidden_bilstm,
                  attent_hidden_size):
         super().__init__()
-
-        # print("num_stocks:",num_stocks)
-        # print("num_group:",num_group)
-        # print("num_day:",num_day,embedding_dim_day)
-        # print("num_month:",num_month)
 
         self.stock_embedding = nn.Embedding(num_stocks, embedding_dim_stock)
         self.group_embedding = nn.Embedding(num_group, embedding_dim_group)

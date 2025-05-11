@@ -15,15 +15,18 @@ def main():
     os.makedirs(os.path.join(os.getcwd(),'logs'),exist_ok=True)
     os.makedirs(os.path.join(os.getcwd(),'logs_images'),exist_ok=True)
     os.makedirs(os.path.join(os.getcwd(),'saved_model'),exist_ok=True)
+    os.makedirs(os.path.join(os.getcwd(),'data'),exist_ok=True)
     
     logging = return_logs(os.path.join(os.getcwd(),'logs','process.log'))
     
-    logging.info("pull data from yahoo")
-    if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
-        data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
-    else:
-        data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
-        data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
+    # logging.info("pull data from yahoo")
+    # if os.path.isfile(os.path.join(os.getcwd(),'data','dataset.parquet')):
+    #     data = pd.read_parquet(os.path.join(os.getcwd(),'data','dataset.parquet'))
+    # else:
+    data = pdata_func.download_data(config.TICKET_LIST, interval="1d")
+    data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
+
+    print("columns:",data.columns)
 
     # data = data[data["tic"].isin(config.TICKET_LIST)]
     data = data[data['Date'].dt.year >=2001]

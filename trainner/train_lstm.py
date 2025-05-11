@@ -8,7 +8,7 @@ import numpy as np
 import sys
 sys.path.append("/app")
 
-from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxCNNwithAttention
+from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxCNNwithAttention, LSTMModelxCNNxNORMWithAttention, LSTMModelxCNNxNORMWithMultiAttention
 import config
 import os
 from datetime import datetime
@@ -92,6 +92,22 @@ class train_lstm:
                 num_month,
                 config
             ).to(self.device)
+        elif config.MODEL == 'LSTMModelxCNNxNORMWithAttention':
+            self.lstm_model = LSTMModelxCNNxNORMWithAttention(
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config
+            ).to(self.device)
+        elif config.MODEL == 'LSTMModelxCNNxNORMWithMultiAttention':
+            self.lstm_model = LSTMModelxCNNxNORMWithMultiAttention(feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config).to(self.device)
 
         optimizer = torch.optim.Adam(self.lstm_model.parameters(),lr=0.0001)
         criterion = nn.HuberLoss(delta=config.LSTM_PARAMS['delta'])
@@ -163,9 +179,10 @@ def train_lstm_func(df_train = pd.read_parquet(os.path.join(os.getcwd(),"data","
 
     today = datetime.today()
     ymd = today.strftime("%Y%m%d")
-    lstm = train_lstm(epochs=500, batch_size = 512, path_save_model = os.path.join(os.getcwd(),'saved_model',f'{ymd}_lstm_model.pth'))
+    lstm = train_lstm(epochs=500, batch_size = 256, path_save_model = os.path.join(os.getcwd(),'saved_model',f'{ymd}_lstm_model.pth'))
     lstm.train(X_val, y_val, stock_tensor, group_tensor, day_tensor, month_tensor, feature_dim, num_stocks, num_group, num_day, num_month)
     lstm.export_model()
 
 if __name__ == "__main__":
+    # train_lstm_func(df_train=pd.read_parquet(os.path.join(os.getcwd(),"data","validate_dataset.parquet")))
     train_lstm_func()
