@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 sys.path.append("/app")
-from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxCNNwithAttention
+from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxCNNwithAttention, LSTMModelxCNNxNORMWithAttention, LSTMModelxCNNxNORMWithMultiAttention
 import config
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -21,6 +21,9 @@ class evaluate_model:
         self.batch_size = batch_size
         self.shuffle_train = shuffle_train
         self.model_name = model_name
+
+    def algorithm_evaluate(df_forecast):
+        pass
 
     def evaluate(self, test_X, test_Y, stock_id, group_id, day_id, month_id, feature_dim, num_stocks, num_group, num_day, num_month):
         test_X = torch.tensor(test_X.to_numpy(), dtype=torch.float32).to(device)
@@ -68,7 +71,22 @@ class evaluate_model:
                 num_month,
                 config
             ).to(device)
-
+        elif config.MODEL == 'LSTMModelxCNNxNORMWithAttention':
+            self.lstm_model = LSTMModelxCNNxNORMWithAttention(
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config
+            ).to(device)
+        elif config.MODEL == 'LSTMModelxCNNxNORMWithMultiAttention':
+            self.lstm_model = LSTMModelxCNNxNORMWithMultiAttention(feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config).to(device)
         self.lstm_model.load_state_dict(torch.load(self.model_name))
 
         # Test the model
@@ -85,6 +103,7 @@ class evaluate_model:
 
                 predictions.append(outputs.cpu().numpy())
                 actuals.append(labels.cpu().numpy())
+                # keep stock name
 
         predictions = np.concatenate(predictions, axis=0)
         predictions = np.nan_to_num(predictions, nan=0)
@@ -99,16 +118,28 @@ class evaluate_model:
         print(f"predictions: {predictions}")
         print(f"actuals: {actuals[0]}")
 
-        mse = mean_squared_error(actuals, predictions)
-        rmse = np.sqrt(mse)
-        mae = mean_absolute_error(actuals, predictions)
-        r2 = r2_score(actuals, predictions)
+        df['result'] = ((df['predictions'] > 0) & (df['actuals'] > 0)) | ((df['predictions'] < 0) & (df['actuals'] < 0))
+        df['std_couple'] = df[['predictions', 'actuals']].std(axis=1)
+
+
+        print("max-std:",df['std_couple'].max())
+        print("min-std:",df['std_couple'].min())
+        print("mean-std:",df['std_couple'].mean())
+        print("accuracy:",len(df[df['result'] == True])/len(df.index))
         
-        print(f"Evaluation Results:")
-        print(f"  MSE  : {mse:.6f}")
-        print(f"  RMSE : {rmse:.6f}")
-        print(f"  MAE  : {mae:.6f}")
-        print(f"  R²   : {r2:.6f}")
+
+
+
+        # mse = mean_squared_error(actuals, predictions)
+        # rmse = np.sqrt(mse)
+        # mae = mean_absolute_error(actuals, predictions)
+        # r2 = r2_score(actuals, predictions)
+        
+        # print(f"Evaluation Results:")
+        # print(f"  MSE  : {mse:.6f}")
+        # print(f"  RMSE : {rmse:.6f}")
+        # print(f"  MAE  : {mae:.6f}")
+        # print(f"  R²   : {r2:.6f}")
 
 
 def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.getcwd(),"data","real_test_dataset.parquet"))):
@@ -129,9 +160,9 @@ def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.ge
     day_tensor = df_test['day'].astype(int).to_list()
 
     if model_name is not None:
-        eval_model = evaluate_model(model_name=model_name, batch_size=512)
+        eval_model = evaluate_model(model_name=model_name, batch_size=256)
         eval_model.evaluate(X_val, y_val, stock_tensor, group_tensor, day_tensor, month_tensor, feature_dim, num_stocks, num_group, num_day, num_month)
             
 
 if __name__ == "__main__":
-    evaluate_lstm("saved_model/20250505_lstm_model.pth")
+    evaluate_lstm("saved_model/20250511_lstm_model.pth")
