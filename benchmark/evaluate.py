@@ -4,7 +4,6 @@ import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
 # from sklearn.preprocessing import MinMaxScaler
 import sys
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import os
 import pandas as pd
 # import matplotlib.pyplot as plt
@@ -13,6 +12,7 @@ import numpy as np
 sys.path.append("/app")
 from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxCNNwithAttention, LSTMModelxCNNxNORMWithAttention, LSTMModelxCNNxNORMWithMultiAttention
 import config
+from func_benchmark import evaluate_report
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -21,9 +21,7 @@ class evaluate_model:
         self.batch_size = batch_size
         self.shuffle_train = shuffle_train
         self.model_name = model_name
-
-    def algorithm_evaluate(df_forecast):
-        pass
+        self.interpret = pd.read_excel(os.path.join(os.getcwd(),'interpret.xlsx'))
 
     def evaluate(self, test_X, test_Y, stock_id, group_id, day_id, month_id, feature_dim, num_stocks, num_group, num_day, num_month):
         test_X = torch.tensor(test_X.to_numpy(), dtype=torch.float32).to(device)
@@ -92,7 +90,7 @@ class evaluate_model:
         # Test the model
         self.lstm_model.eval()
         test_loss = 0
-        predictions, actuals = [], []
+        predictions, actuals, tickle = [], [], []
         criterion = nn.HuberLoss(delta=config.LSTM_PARAMS['delta'])
         with torch.no_grad():
             for inputs, stock_tensor, group_tensor, month_tensor, day_tensor, labels in test_loader:
@@ -103,43 +101,20 @@ class evaluate_model:
 
                 predictions.append(outputs.cpu().numpy())
                 actuals.append(labels.cpu().numpy())
-                # keep stock name
+                tickle.append(stock_tensor.cpu().numpy())
 
         predictions = np.concatenate(predictions, axis=0)
         predictions = np.nan_to_num(predictions, nan=0)
         actuals = np.concatenate(actuals, axis=0)
         actuals = np.nan_to_num(actuals, nan=0)
+        tickle = np.concatenate(tickle, axis=0)
+        tickle =  np.nan_to_num(tickle, nan=0)
 
-        df = pd.DataFrame(np.hstack((predictions, actuals)), columns=['predictions', 'actuals'])
+        df = pd.DataFrame(np.hstack((predictions, actuals, tickle)), columns=['predictions', 'actuals', 'tickle'])
         df.to_excel("data_evaluate.xlsx")
 
-        print("shape predictions:",predictions.shape)
-        print("shape actuals:",actuals.shape)
-        print(f"predictions: {predictions}")
-        print(f"actuals: {actuals[0]}")
-
-        df['result'] = ((df['predictions'] > 0) & (df['actuals'] > 0)) | ((df['predictions'] < 0) & (df['actuals'] < 0))
-        df['std_couple'] = df[['predictions', 'actuals']].std(axis=1)
-
-
-        print("max-std:",df['std_couple'].max())
-        print("min-std:",df['std_couple'].min())
-        print("mean-std:",df['std_couple'].mean())
-        print("accuracy:",len(df[df['result'] == True])/len(df.index))
+        evaluate_report(df, self.interpret)
         
-
-
-
-        # mse = mean_squared_error(actuals, predictions)
-        # rmse = np.sqrt(mse)
-        # mae = mean_absolute_error(actuals, predictions)
-        # r2 = r2_score(actuals, predictions)
-        
-        # print(f"Evaluation Results:")
-        # print(f"  MSE  : {mse:.6f}")
-        # print(f"  RMSE : {rmse:.6f}")
-        # print(f"  MAE  : {mae:.6f}")
-        # print(f"  R²   : {r2:.6f}")
 
 
 def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.getcwd(),"data","real_test_dataset.parquet"))):
@@ -165,4 +140,4 @@ def evaluate_lstm(model_name = None,df_test = pd.read_parquet(os.path.join(os.ge
             
 
 if __name__ == "__main__":
-    evaluate_lstm("saved_model/20250511_lstm_model.pth")
+    evaluate_lstm("saved_model/20250512_lstm_model.pth")

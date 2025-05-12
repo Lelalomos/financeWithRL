@@ -144,7 +144,9 @@ class train_lstm:
 
             avg_loss = val_loss / len(train_loader)
             print(f"Epoch [{epoch+1}/{self.epochs}], Loss: {avg_loss:.4f}")
-            
+
+            if avg_loss < float(config.ACC_EXPECT):
+                torch.save(self.lstm_model.state_dict(), self.path_save_model)
         
     def plot_image(self, save_image):
         plt.plot(self.list_loss)

@@ -75,11 +75,13 @@ MAP_EWAVE = {
     '4':'4',
     '5':'5'}
 
-MODEL = "LSTMModelxCNNxNORMWithMultiAttention"
+# MODEL = "LSTMModelxCNNxNORMWithMultiAttention"
 # MODEL = "LSTMModelxCNNxNORMWithAttention"
 # MODEL = "LSTMModelxCNNwithAttention"
-# MODEL = "lstm_with_attention"
+MODEL = "lstm_with_attention"
 # MODEL = "lstm"
+
+ACC_EXPECT = 0.035
 
 WEIGHT_GROUP = {
     "software":1,
