@@ -7,7 +7,8 @@ from datetime import datetime
 import math
 from scipy.signal import argrelextrema
 from model.prophet_model import pipeline_prophet
-from model.pca_model import pca_model
+import os
+
 
 def search_null_value(df):
     columns_with_null = df.columns[df.isnull().any()]
@@ -404,4 +405,86 @@ def predict_macro_value(df):
     return df_copy
 
 
+def download_and_prepare_data(logging, start_date=None, end_date=None, interval = "1d"):
+    from utils import prepare_data, normalization_data
+    
+    pdata_func = prepare_data()
+    norm_func = normalization_data()
 
+    data = pdata_func.download_data(ticker_list=config.TICKET_LIST,start_date=start_date, end_date=end_date, interval=interval)
+    data.to_parquet(os.path.join(os.getcwd(), 'data','dataset.parquet'))
+
+    print("columns:",data.columns)
+
+    # data = data[data["tic"].isin(config.TICKET_LIST)]
+    data = data[data['Date'].dt.year >=2001]
+    data = data.rename(columns=config.MAP_COLUMNS_NAME)
+
+    # data = pdata_func.add_elliott_wave(data)
+    data = pdata_func.add_macro_data(data)
+
+    # predict macro value
+    # print("before predict",data.columns)
+    data = predict_macro_value(data)
+
+    # data.to_csv("test.csv")
+
+    logging.info("prepare data")
+    # clean data
+    # data = pdata_func.pre_clean_data(data)
+    data = data.rename(columns=config.MAP_COLUMNS_NAME)
+    print("columns",data.columns)
+    data = pdata_func.add_indicator(data, config.INDICATOR_LIST)
+
+    # add resource data
+    # data.to_csv("before_add.csv")
+    data = pdata_func.add_commodity_data(data)
+    data = pdata_func.add_vix_data(data)
+    data = pdata_func.add_bond_yields(data)
+
+    data = return_candle_pattern(data)
+    data = data.fillna(0)
+    # separate date
+    data['Date'] = pd.to_datetime(data['Date'])
+    data['day'] = data['Date'].dt.day
+    data['month'] = data['Date'].dt.month
+    data['year'] = data['Date'].dt.year
+    data = data.sort_values(by=["Date", "tic"])
+
+    data["pre_7"] = data["close"].pct_change(periods=7).shift(-7) * 100  # เปลี่ยนเป็น %
+    data["pre_7"] = np.tanh(data["pre_7"] / 100) * 100
+    data["pre_7"] = data["pre_7"].fillna(method="bfill", limit=7)
+
+    # grouping sector in stock
+    group_sector = groupping_stock(data, config)
+    group_sector = group_sector.sort_values(by=["Date", "tic"])
+    group_sector = convert_string2int(group_sector)
+
+    # interpreter data
+    group_sector['stochrsi_14'] = group_sector['stochrsi_14']/100
+    group_sector['stochrsi_14_decision'] = group_sector['stochrsi_14'].apply(cal_storsi)
+
+    group_sector['rsi_14'] = group_sector['rsi_14']/100
+    group_sector['rsi_14_decision'] = group_sector['rsi_14'].apply(cal_rsi)
+
+    group_sector['ichimoku_decision'] = group_sector['ichimoku'].apply(cal_ichimoku)
+
+    group_sector['ema_50100'] = group_sector.apply(cal_ema,args=(50,100),axis=1)
+    group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(50,200),axis=1)
+    group_sector['ema_50200'] = group_sector.apply(cal_ema,args=(100,200),axis=1)
+
+    # column Outliers
+    outliers_column = ['close','high','low','open','volume','vwma_20','ema_200','ema_50','ema_100','macd','ichimoku',"vix","bondyield"]+list(config.COMMODITY.values())+list(config.MACRO_DATA)
+
+    # df_outlier = group_sector[outliers_column]
+    group_sector = norm_func.norm_each_row_bylogtransform(group_sector, outliers_column)
+    group_sector['ichimoku'] = group_sector['ichimoku'].fillna(-1)
+    group_sector['macd'] = group_sector['macd'].fillna(-1)
+
+    # add log transformation with pre_7
+    group_sector = norm_func.norm_each_row_bylogtransform(group_sector, ["pre_7"])
+
+    # group_sector = group_sector.round(4)
+    group_sector.drop(['Date'], inplace=True, axis=1)
+
+    return group_sector
