@@ -8,7 +8,7 @@ import numpy as np
 import sys
 sys.path.append("/app")
 
-from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxCNNwithAttention, LSTMModelxCNNxNORMWithAttention, LSTMModelxCNNxNORMWithMultiAttention
+from model.model import LSTMModel, LSTMModelwithAttention, LSTMModelxCNNwithAttention, LSTMModelxCNNxNORMWithAttention, LSTMModelxCNNxNORMWithMultiAttention, LSTMModelwithMultiheadAttention
 import config
 import os
 from datetime import datetime
@@ -108,6 +108,14 @@ class train_lstm:
                 num_day,
                 num_month,
                 config).to(self.device)
+        elif config.MODEL == 'LSTMModelWithMultiAttention':
+            self.lstm_model = LSTMModelwithMultiheadAttention(
+                feature_dim,
+                num_stocks,
+                num_group,
+                num_day,
+                num_month,
+                config).to(self.device)
 
         optimizer = torch.optim.Adam(self.lstm_model.parameters(),lr=0.0001)
         criterion = nn.HuberLoss(delta=config.LSTM_PARAMS['delta'])
@@ -147,6 +155,7 @@ class train_lstm:
 
             if avg_loss < float(config.ACC_EXPECT):
                 torch.save(self.lstm_model.state_dict(), self.path_save_model)
+                break
         
     def plot_image(self, save_image):
         plt.plot(self.list_loss)

@@ -78,10 +78,11 @@ MAP_EWAVE = {
 # MODEL = "LSTMModelxCNNxNORMWithMultiAttention"
 # MODEL = "LSTMModelxCNNxNORMWithAttention"
 # MODEL = "LSTMModelxCNNwithAttention"
-MODEL = "lstm_with_attention"
-# MODEL = "lstm"
+# MODEL = "LSTMModelWithMultiAttention"
+# MODEL = "lstm_with_attention"
+MODEL = "lstm"
 
-ACC_EXPECT = 0.035
+ACC_EXPECT = 0.04
 
 WEIGHT_GROUP = {
     "software":1,
@@ -113,6 +114,7 @@ WEIGHT_GROUP = {
 }
 
 INDICATOR_LIST = ['rsi_14','stochrsi_14','vwma_20','ema_200', 'ema_50', 'ema_100', 'macd', 'ichimoku']
+ADDITIONS_VALUE = ["vix"]
 
 
 MAP_COLUMNS_NAME = {
@@ -174,8 +176,8 @@ LSTMxCNN_ATTENTION_PARAMS = {
     'cnn_chanel2':128,
     'hidden_bilstm': 128, 
     'first_layer_hidden_size': 256, 
-    'second_layer_hidden_size': 128, 
-    'third_layer_hidden_size': 64,
+    'second_layer_hidden_size': 512, 
+    'third_layer_hidden_size': 256,
     'dropout': 0.4856366310103994, 
     'delta': 0.11409627325310476, 
     'attent_hidden_size': 128}
@@ -189,8 +191,8 @@ LSTMxCNNxNORM_ATTENTION_PARAMS = {
     'cnn_chanel2':128,
     'hidden_bilstm': 128, 
     'first_layer_hidden_size': 256, 
-    'second_layer_hidden_size': 128, 
-    'third_layer_hidden_size': 64,
+    'second_layer_hidden_size': 512, 
+    'third_layer_hidden_size': 256,
     'dropout': 0.4856366310103994, 
     'delta': 0.11409627325310476, 
     'attent_hidden_size': 128}
@@ -205,8 +207,21 @@ LSTMxCNNxNORM_MULRIATTENTION_PARAMS = {
     'cnn_chanel2':128,
     'hidden_bilstm': 128, 
     'first_layer_hidden_size': 256, 
-    'second_layer_hidden_size': 128, 
-    'third_layer_hidden_size': 64,
+    'second_layer_hidden_size': 512, 
+    'third_layer_hidden_size': 256,
     'dropout': 0.4856366310103994, 
     'delta': 0.11409627325310476, 
+    'num_head_attention': 4}
+
+LSTMModelWithMultiAttention_PARAMS = {
+    'embedding_dim_stock': 206, 
+    'embedding_dim_group': 56, 
+    'embedding_dim_day': 33, 
+    'embedding_dim_month': 16,
+    'hidden_bilstm': 128, 
+    'first_layer_hidden_size': 256, 
+    'second_layer_hidden_size': 512, 
+    'third_layer_hidden_size': 256,
+    'dropout': 0.4856366310103994, 
+    'delta': 0.11409627325310476,
     'num_head_attention': 4}
